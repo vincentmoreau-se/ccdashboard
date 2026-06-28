@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     export_user_id: str | None = None
     export_instance_id: str = "default"
     claude_settings_path: Path = Path.home() / ".claude" / "settings.json"
+    claude_skills_dir: Path = Path.home() / ".claude" / "skills"
+    claude_plugins_path: Path = Path.home() / ".claude" / "plugins" / "installed_plugins.json"
+    claude_global_config_path: Path = Path.home() / ".claude.json"
+    claude_agents_dir: Path = Path.home() / ".claude" / "agents"
+    claude_commands_dir: Path = Path.home() / ".claude" / "commands"
     export_anon_id_path: Path = Path.home() / ".claude" / ".ccdashboard_user_id"
 
 

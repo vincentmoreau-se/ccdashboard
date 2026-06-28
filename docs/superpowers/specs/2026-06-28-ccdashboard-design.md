@@ -182,8 +182,31 @@ de payload.
 **Données envoyées** : agrégats uniquement par défaut — `SessionSummary` /
 `ProjectSummary` **sans contenu de message ni titre** (tokens, coût, modèle,
 durée, nb messages, répartition d'outils, timestamps). Champs enrichis
-(`ai_title`, `git_branch`, `cc_version`) inclus **seulement si**
-`export.include_enriched = true`.
+(`ai_title`, `git_branch`, `cc_version`) **ainsi que les chemins de fichiers
+absolus locaux** (`cwd`, `file_path`) inclus **seulement si**
+`export.include_enriched = true` ; sinon ils sont mis à `null` (le serveur
+central n'en a pas besoin : il s'indexe sur `source` + `session_id` et dérive le
+projet du champ `project`).
+
+Les champs suivants de `SessionSummary` sont inclus dans `sessions[]` en tant
+que **champs optionnels rétro-compatibles** (agrégats purs, aucun contenu de
+message) — `schema_version` reste **1** ; le serveur central ignore les clés
+qu'il ne connaît pas (`extra="ignore"`) :
+
+| Champ | Type | Description |
+|---|---|---|
+| `language_counts` | `dict[str, int]` | Nombre d'occurrences d'outils touchant des fichiers de ce langage (lecture/écriture), pas des fichiers uniques (ex. `{"Python": 12, "TypeScript": 5}`) |
+| `framework_counts` | `dict[str, int]` | Nombre d'occurrences d'outils touchant des fichiers de ce framework (lecture/écriture), pas des fichiers uniques (ex. `{"React": 3}`) |
+| `builtin_tool_counts` | `dict[str, int]` | Fréquence des outils built-in Claude Code par nom (ex. `{"Bash": 40, "Edit": 12}`) |
+| `user_tool_counts` | `dict[str, int]` | Fréquence des outils utilisateur/MCP non-built-in (ex. `{"Skill": 3, "playwright": 2}`) |
+| `skill_counts` | `dict[str, int]` | Fréquence des skills déclenchés (ex. `{"frontend-design": 1}`) |
+| `mcp_server_counts` | `dict[str, int]` | Fréquence des serveurs MCP utilisés (ex. `{"github": 7}`) |
+| `subagent_counts` | `dict[str, int]` | Fréquence des sous-agents lancés par type (ex. `{"general-purpose": 4}`) |
+| `slash_command_counts` | `dict[str, int]` | Fréquence des slash-commands invoquées (ex. `{"/review": 2}`) |
+
+Ces champs sont **sûrs à toujours envoyer** : ils ne contiennent ni contenu de
+message, ni chemin de fichier, ni titre — seulement des comptages agrégés par
+catégorie.
 
 **Identité** : `machine_id` (défaut = hostname), `user_id`, `instance_id` stable —
 joints à chaque payload sous `source`. Le `user_id` est **dérivé** (résolu côté
@@ -207,11 +230,41 @@ Le curseur n'avance qu'en cas de succès.
 
 ```jsonc
 {
-  "schema_version": 1,
+  "schema_version": 1,               // ne pas incrémenter ; le serveur ignore les champs inconnus
   "source": { "machine_id": "...", "user_id": "...", "instance_id": "..." },
   "sent_at": "2026-06-28T...Z",
-  "sessions": [ /* agrégats, + champs enrichis si activés */ ],
-  "projects": [ /* agrégats */ ]
+  "sessions": [
+    {
+      // --- champs de base ---
+      "session_id": "abc123",
+      "project": "my-project",
+      "started_at": "2026-06-28T10:00:00Z",
+      "ended_at": "2026-06-28T11:30:00Z",
+      "duration_seconds": 5400,
+      "message_count": 42,
+      "models": ["claude-opus-4-8"],
+      "provider": "anthropic",
+      "cost": 1.23,
+      "cost_known": true,
+      "usage": { "input": 12000, "output": 3000, "cache_read": 5000, "cache_write_5m": 0, "cache_write_1h": 0, "web_search": 0, "web_fetch": 0 },
+      "lines_generated": 320,
+      "tool_counts": { "Bash": 40, "Edit": 12, "Read": 25, "playwright": 2, "Skill": 3 },  // union (built-in + user)
+      // --- champs enrichis (uniquement si export.include_enriched = true) ---
+      "ai_title": null,               // null par défaut
+      "git_branch": null,
+      "cc_version": null,
+      // --- nouvelles maps agrégées (schema_version 1, rétro-compatibles) ---
+      "language_counts":      { "Python": 12, "TypeScript": 5 },
+      "framework_counts":     { "React": 3, "FastAPI": 2 },
+      "builtin_tool_counts":  { "Bash": 40, "Edit": 12, "Read": 25 },  // sous-ensemble built-in de tool_counts
+      "user_tool_counts":     { "playwright": 2, "Skill": 3 },         // sous-ensemble utilisateur/MCP de tool_counts
+      "skill_counts":         { "frontend-design": 1, "deploy-nas": 1 },
+      "mcp_server_counts":    { "github": 7, "playwright": 2 },
+      "subagent_counts":      { "general-purpose": 4, "code-reviewer": 1 },
+      "slash_command_counts": { "/review": 2, "/run": 5 }
+    }
+  ],
+  "projects": [ /* agrégats ProjectSummary */ ]
 }
 ```
 

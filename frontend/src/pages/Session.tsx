@@ -2,8 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 
 import { getConfig, getSession } from "../api/client";
+import BarList from "../components/BarList";
+import Donut from "../components/Donut";
+import Panel from "../components/Panel";
 import {
-  formatCost, formatDuration, formatModel, formatProjectName, formatTokens,
+  formatCost, formatCount, formatDuration, formatModel, formatProjectName, formatTokens, mapToBarItems,
 } from "../lib/format";
 import { theme } from "../theme";
 
@@ -66,6 +69,139 @@ export default function Session() {
           </div>
         ))}
       </div>
+
+      {/* Tech & Tooling panels */}
+      {(Object.keys(s.language_counts ?? {}).length > 0 ||
+        Object.keys(s.framework_counts ?? {}).length > 0 ||
+        Object.keys(s.builtin_tool_counts ?? {}).length > 0 ||
+        Object.keys(s.user_tool_counts ?? {}).length > 0 ||
+        Object.keys(s.skill_counts ?? {}).length > 0 ||
+        Object.keys(s.mcp_server_counts ?? {}).length > 0 ||
+        Object.keys(s.subagent_counts ?? {}).length > 0 ||
+        Object.keys(s.slash_command_counts ?? {}).length > 0) && (
+        <div style={{ display: "grid", gap: 16, marginTop: 24 }}>
+          <h3 style={{ marginBottom: 0 }}>Tech & Tooling</h3>
+
+          {Object.keys(s.language_counts ?? {}).length > 0 && (
+            <Panel title="Langages">
+              <Donut
+                data={mapToBarItems(s.language_counts).map((it) => ({
+                  name: it.label,
+                  value: it.value,
+                }))}
+                height={180}
+                formatValue={formatCount}
+              />
+            </Panel>
+          )}
+
+          {Object.keys(s.framework_counts ?? {}).length > 0 && (
+            <Panel title="Frameworks">
+              <BarList
+                items={mapToBarItems(s.framework_counts)}
+                format={formatCount}
+                color={theme.colors.amber}
+              />
+            </Panel>
+          )}
+
+          {(Object.keys(s.builtin_tool_counts ?? {}).length > 0 ||
+            Object.keys(s.user_tool_counts ?? {}).length > 0) && (
+            <Panel title="Outils Claude Code">
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                  gap: 20,
+                }}
+              >
+                {Object.keys(s.builtin_tool_counts ?? {}).length > 0 && (
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: theme.colors.textMuted,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        marginBottom: 10,
+                      }}
+                    >
+                      Outils intégrés
+                    </div>
+                    <BarList
+                      items={mapToBarItems(s.builtin_tool_counts)}
+                      format={formatCount}
+                      color={theme.colors.accent}
+                    />
+                  </div>
+                )}
+                {Object.keys(s.user_tool_counts ?? {}).length > 0 && (
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: theme.colors.textMuted,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        marginBottom: 10,
+                      }}
+                    >
+                      Outils utilisateur
+                    </div>
+                    <BarList
+                      items={mapToBarItems(s.user_tool_counts)}
+                      format={formatCount}
+                      color={theme.colors.green}
+                    />
+                  </div>
+                )}
+              </div>
+            </Panel>
+          )}
+
+          {Object.keys(s.skill_counts ?? {}).length > 0 && (
+            <Panel title="Skills">
+              <BarList
+                items={mapToBarItems(s.skill_counts)}
+                format={formatCount}
+                color={theme.colors.accent}
+              />
+            </Panel>
+          )}
+
+          {Object.keys(s.mcp_server_counts ?? {}).length > 0 && (
+            <Panel title="Serveurs MCP">
+              <BarList
+                items={mapToBarItems(s.mcp_server_counts)}
+                format={formatCount}
+                color={theme.chart[5]}
+              />
+            </Panel>
+          )}
+
+          {Object.keys(s.subagent_counts ?? {}).length > 0 && (
+            <Panel title="Sous-agents">
+              <BarList
+                items={mapToBarItems(s.subagent_counts)}
+                format={formatCount}
+                color={theme.chart[4]}
+              />
+            </Panel>
+          )}
+
+          {Object.keys(s.slash_command_counts ?? {}).length > 0 && (
+            <Panel title="Slash commands">
+              <BarList
+                items={mapToBarItems(s.slash_command_counts)}
+                format={formatCount}
+                color={theme.chart[3]}
+              />
+            </Panel>
+          )}
+        </div>
+      )}
 
       <h3>Timeline</h3>
       <p style={{ marginTop: -4, fontSize: 13 }}>

@@ -179,3 +179,148 @@ def test_unknown_model_sets_cost_known_false():
     )
     assert s.cost_known is False
     assert s.is_active is False
+
+
+# ---------------------------------------------------------------------------
+# B1: technology/tooling signal folding
+# ---------------------------------------------------------------------------
+
+def _make_session(lines, **kw):
+    return summarize_session(
+        parse_lines(lines), file_path=Path("x.jsonl"), project="p",
+        table=PriceTable({}), default_provider="anthropic",
+        active_threshold_seconds=30, now_ts=1_000_000.0, mtime=1_000_000.0,
+        **kw,
+    )
+
+
+def test_builtin_vs_user_tool_split():
+    """Built-in tools go to builtin_tool_counts; MCP and Skill go to user_tool_counts."""
+    lines = [
+        json.dumps({
+            "type": "assistant", "sessionId": "s",
+            "timestamp": "2026-06-28T10:00:00.000Z",
+            "message": {"model": "claude-opus-4-8", "content": [
+                {"type": "tool_use", "name": "Bash", "input": {}},
+                {"type": "tool_use", "name": "Write", "input": {}},
+                {"type": "tool_use", "name": "Edit", "input": {}},
+                {"type": "tool_use", "name": "Skill", "input": {"skill": "test-skill"}},
+                {"type": "tool_use", "name": "mcp__playwright__browser_navigate", "input": {}},
+            ]},
+        }),
+    ]
+    s = _make_session(lines)
+    # Builtins
+    assert s.builtin_tool_counts.get("Bash") == 1
+    assert s.builtin_tool_counts.get("Write") == 1
+    assert s.builtin_tool_counts.get("Edit") == 1
+    # User tools
+    assert s.user_tool_counts.get("Skill") == 1
+    assert s.user_tool_counts.get("mcp__playwright__browser_navigate") == 1
+    # Cross-check: no bleed between the two maps
+    assert "Bash" not in s.user_tool_counts
+    assert "Write" not in s.user_tool_counts
+    assert "Edit" not in s.user_tool_counts
+    assert "Skill" not in s.builtin_tool_counts
+    assert "mcp__playwright__browser_navigate" not in s.builtin_tool_counts
+
+
+def test_builtin_split_agent_is_builtin():
+    """Agent is a built-in tool even though it spawns subagents."""
+    lines = [
+        json.dumps({
+            "type": "assistant", "sessionId": "s",
+            "timestamp": "2026-06-28T10:00:00.000Z",
+            "message": {"model": "claude-opus-4-8", "content": [
+                {"type": "tool_use", "name": "Agent", "input": {"subagent_type": "Explore"}},
+            ]},
+        }),
+    ]
+    s = _make_session(lines)
+    assert s.builtin_tool_counts.get("Agent") == 1
+    assert "Agent" not in s.user_tool_counts
+
+
+def test_language_counts_fold():
+    """Language occurrences across records are counted in language_counts."""
+    lines = [
+        json.dumps({
+            "type": "assistant", "sessionId": "s",
+            "timestamp": "2026-06-28T10:00:00.000Z",
+            "message": {"model": "claude-opus-4-8", "content": [
+                {"type": "tool_use", "name": "Write", "input": {"file_path": "/src/a.py", "content": "pass"}},
+                {"type": "tool_use", "name": "Write", "input": {"file_path": "/src/b.py", "content": "pass"}},
+                {"type": "tool_use", "name": "Edit", "input": {"file_path": "/src/App.tsx", "old_string": "x", "new_string": "y"}},
+            ]},
+        }),
+    ]
+    s = _make_session(lines)
+    assert s.language_counts.get("Python") == 2
+    assert s.language_counts.get("TypeScript/React") == 1
+
+
+def test_framework_counts_fold():
+    """Framework occurrences across records are counted in framework_counts."""
+    lines = [
+        json.dumps({
+            "type": "assistant", "sessionId": "s",
+            "timestamp": "2026-06-28T10:00:00.000Z",
+            "message": {"model": "claude-opus-4-8", "content": [
+                {"type": "tool_use", "name": "Bash", "input": {"command": "uv run pytest"}},
+                {"type": "tool_use", "name": "Write", "input": {"file_path": "/app/package.json", "content": "{}"}},
+            ]},
+        }),
+    ]
+    s = _make_session(lines)
+    assert s.framework_counts.get("Python") >= 1   # from uv
+    assert s.framework_counts.get("pytest") >= 1   # from pytest
+    assert s.framework_counts.get("Node.js") >= 1  # from package.json
+
+
+def test_skill_mcp_subagent_slash_counts():
+    """Skill, MCP server, subagent, and slash command counts are folded correctly."""
+    lines = [
+        json.dumps({
+            "type": "assistant", "sessionId": "s",
+            "timestamp": "2026-06-28T10:00:00.000Z",
+            "message": {"model": "claude-opus-4-8", "content": [
+                {"type": "tool_use", "name": "Skill", "input": {"skill": "deploy-nas"}},
+                {"type": "tool_use", "name": "Agent", "input": {"subagent_type": "Explore"}},
+                {"type": "tool_use", "name": "mcp__playwright__browser_navigate", "input": {}},
+            ]},
+        }),
+        json.dumps({
+            "type": "user", "sessionId": "s",
+            "timestamp": "2026-06-28T10:01:00.000Z",
+            "message": {"role": "user", "content": "<command-name>/clear</command-name>"},
+        }),
+    ]
+    s = _make_session(lines)
+    assert s.skill_counts == {"deploy-nas": 1}
+    assert s.subagent_counts == {"Explore": 1}
+    assert s.mcp_server_counts == {"playwright": 1}
+    assert s.slash_command_counts == {"/clear": 1}
+
+
+def test_counts_accumulate_across_records():
+    """Counts from multiple records in a session are summed together."""
+    lines = [
+        json.dumps({
+            "type": "assistant", "sessionId": "s",
+            "timestamp": "2026-06-28T10:00:00.000Z",
+            "message": {"model": "claude-opus-4-8", "content": [
+                {"type": "tool_use", "name": "Write", "input": {"file_path": "/a.py", "content": "x"}},
+            ]},
+        }),
+        json.dumps({
+            "type": "assistant", "sessionId": "s",
+            "timestamp": "2026-06-28T10:01:00.000Z",
+            "message": {"model": "claude-opus-4-8", "content": [
+                {"type": "tool_use", "name": "Write", "input": {"file_path": "/b.py", "content": "y"}},
+                {"type": "tool_use", "name": "Write", "input": {"file_path": "/c.py", "content": "z"}},
+            ]},
+        }),
+    ]
+    s = _make_session(lines)
+    assert s.language_counts.get("Python") == 3
+    assert s.builtin_tool_counts.get("Write") == 3

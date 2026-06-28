@@ -38,6 +38,8 @@ def list_projects(summaries: list[SessionSummary]) -> list[ProjectSummary]:
         p.cost += s.cost
         p.cost_known = p.cost_known and s.cost_known
         p.models = _merge_models(p.models, s.models)
+        _merge_counts(p.language_counts, s.language_counts)
+        _merge_counts(p.framework_counts, s.framework_counts)
         last = s.ended_at or s.started_at
         if last and (p.last_activity is None or last > p.last_activity):
             p.last_activity = last
@@ -60,6 +62,14 @@ def build_overview(summaries: list[SessionSummary]) -> Overview:
     day_acc: dict[str, TimeBucket] = {}
     tool_acc: dict[str, int] = {}
     content_kind_acc: dict[str, int] = {}
+    language_acc: dict[str, int] = {}
+    framework_acc: dict[str, int] = {}
+    builtin_tool_acc: dict[str, int] = {}
+    user_tool_acc: dict[str, int] = {}
+    skill_acc: dict[str, int] = {}
+    mcp_server_acc: dict[str, int] = {}
+    subagent_acc: dict[str, int] = {}
+    slash_command_acc: dict[str, int] = {}
 
     for s in summaries:
         total = total.add(s.usage)
@@ -68,6 +78,14 @@ def build_overview(summaries: list[SessionSummary]) -> Overview:
         cost_known = cost_known and s.cost_known
         _merge_counts(tool_acc, s.tool_counts)
         _merge_counts(content_kind_acc, s.content_kind_counts)
+        _merge_counts(language_acc, s.language_counts)
+        _merge_counts(framework_acc, s.framework_counts)
+        _merge_counts(builtin_tool_acc, s.builtin_tool_counts)
+        _merge_counts(user_tool_acc, s.user_tool_counts)
+        _merge_counts(skill_acc, s.skill_counts)
+        _merge_counts(mcp_server_acc, s.mcp_server_counts)
+        _merge_counts(subagent_acc, s.subagent_counts)
+        _merge_counts(slash_command_acc, s.slash_command_counts)
 
         model_key = s.models[0] if s.models else "(none)"
         ms = model_acc.get(model_key)
@@ -104,6 +122,14 @@ def build_overview(summaries: list[SessionSummary]) -> Overview:
         tool_counts=tool_acc,
         content_kind_counts=content_kind_acc,
         top_sessions=top_sessions,
+        language_counts=language_acc,
+        framework_counts=framework_acc,
+        builtin_tool_counts=builtin_tool_acc,
+        user_tool_counts=user_tool_acc,
+        skill_counts=skill_acc,
+        mcp_server_counts=mcp_server_acc,
+        subagent_counts=subagent_acc,
+        slash_command_counts=slash_command_acc,
     )
 
 

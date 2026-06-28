@@ -5,6 +5,7 @@ from pathlib import Path
 from app.models import SessionSummary, Usage
 from app.parser import ParsedSession
 from app.pricing import PriceTable, detect_provider
+from app.taxonomy import classify_tool
 
 
 def is_priceable_model(model: str | None) -> bool:
@@ -44,6 +45,14 @@ def summarize_session(
     git_branch = None
     cc_version = None
     cwd = None
+    language_counts: dict[str, int] = {}
+    framework_counts: dict[str, int] = {}
+    builtin_tool_counts: dict[str, int] = {}
+    user_tool_counts: dict[str, int] = {}
+    skill_counts: dict[str, int] = {}
+    mcp_server_counts: dict[str, int] = {}
+    subagent_counts: dict[str, int] = {}
+    slash_command_counts: dict[str, int] = {}
 
     for r in parsed.records:
         if r.timestamp:
@@ -53,9 +62,26 @@ def summarize_session(
         cwd = cwd or r.cwd
         for t in r.tools:
             tool_counts[t] = tool_counts.get(t, 0) + 1
+            cat = classify_tool(t)
+            if cat == "builtin":
+                builtin_tool_counts[t] = builtin_tool_counts.get(t, 0) + 1
+            else:
+                user_tool_counts[t] = user_tool_counts.get(t, 0) + 1
         for k in r.content_kinds:
             content_kind_counts[k] = content_kind_counts.get(k, 0) + 1
         lines_generated += r.lines_generated
+        for lang in r.languages:
+            language_counts[lang] = language_counts.get(lang, 0) + 1
+        for fw in r.frameworks:
+            framework_counts[fw] = framework_counts.get(fw, 0) + 1
+        for skill in r.skills:
+            skill_counts[skill] = skill_counts.get(skill, 0) + 1
+        for sa in r.subagents:
+            subagent_counts[sa] = subagent_counts.get(sa, 0) + 1
+        for mcp in r.mcp_servers:
+            mcp_server_counts[mcp] = mcp_server_counts.get(mcp, 0) + 1
+        for sc in r.slash_commands:
+            slash_command_counts[sc] = slash_command_counts.get(sc, 0) + 1
         if r.type == "assistant" and is_priceable_model(r.model):
             if not provider_resolved:
                 provider = detect_provider(r.model, default_provider)
@@ -95,4 +121,12 @@ def summarize_session(
         tool_counts=tool_counts,
         content_kind_counts=content_kind_counts,
         skipped_lines=parsed.skipped_lines,
+        language_counts=language_counts,
+        framework_counts=framework_counts,
+        builtin_tool_counts=builtin_tool_counts,
+        user_tool_counts=user_tool_counts,
+        skill_counts=skill_counts,
+        mcp_server_counts=mcp_server_counts,
+        subagent_counts=subagent_counts,
+        slash_command_counts=slash_command_counts,
     )

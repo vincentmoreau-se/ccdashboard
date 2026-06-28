@@ -55,3 +55,14 @@ export function formatCount(n: number): string {
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
   return String(n);
 }
+
+/** Convert a Record<string, number> map to sorted BarList items, top N. */
+export function mapToBarItems(
+  map: Record<string, number>,
+  limit = 12,
+): { label: string; value: number }[] {
+  return Object.entries(map)
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, limit);
+}

@@ -41,6 +41,12 @@ class MessageRecord(BaseModel):
     lines_generated: int = 0
     cost: float = 0.0
     cost_known: bool = True
+    languages: list[str] = Field(default_factory=list)
+    frameworks: list[str] = Field(default_factory=list)
+    skills: list[str] = Field(default_factory=list)
+    subagents: list[str] = Field(default_factory=list)
+    mcp_servers: list[str] = Field(default_factory=list)
+    slash_commands: list[str] = Field(default_factory=list)
 
 
 class SessionSummary(BaseModel):
@@ -66,6 +72,14 @@ class SessionSummary(BaseModel):
     tool_counts: dict[str, int] = Field(default_factory=dict)
     content_kind_counts: dict[str, int] = Field(default_factory=dict)
     skipped_lines: int = 0
+    language_counts: dict[str, int] = Field(default_factory=dict)
+    framework_counts: dict[str, int] = Field(default_factory=dict)
+    builtin_tool_counts: dict[str, int] = Field(default_factory=dict)
+    user_tool_counts: dict[str, int] = Field(default_factory=dict)
+    skill_counts: dict[str, int] = Field(default_factory=dict)
+    mcp_server_counts: dict[str, int] = Field(default_factory=dict)
+    subagent_counts: dict[str, int] = Field(default_factory=dict)
+    slash_command_counts: dict[str, int] = Field(default_factory=dict)
 
 
 class ProjectSummary(BaseModel):
@@ -78,6 +92,8 @@ class ProjectSummary(BaseModel):
     cost_known: bool = True
     last_activity: datetime | None = None
     models: list[str] = Field(default_factory=list)
+    language_counts: dict[str, int] = Field(default_factory=dict)
+    framework_counts: dict[str, int] = Field(default_factory=dict)
 
 
 class ModelStat(BaseModel):
@@ -108,3 +124,11 @@ class Overview(BaseModel):
     tool_counts: dict[str, int] = Field(default_factory=dict)
     content_kind_counts: dict[str, int] = Field(default_factory=dict)
     top_sessions: list[SessionSummary] = Field(default_factory=list)
+    language_counts: dict[str, int] = Field(default_factory=dict)
+    framework_counts: dict[str, int] = Field(default_factory=dict)
+    builtin_tool_counts: dict[str, int] = Field(default_factory=dict)
+    user_tool_counts: dict[str, int] = Field(default_factory=dict)
+    skill_counts: dict[str, int] = Field(default_factory=dict)
+    mcp_server_counts: dict[str, int] = Field(default_factory=dict)
+    subagent_counts: dict[str, int] = Field(default_factory=dict)
+    slash_command_counts: dict[str, int] = Field(default_factory=dict)

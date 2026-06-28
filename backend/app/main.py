@@ -9,11 +9,12 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import EventSourceResponse
 
-from app.config import get_settings
+from app.config import Settings, get_settings
 from app.exporter import Exporter
 from app.metrics import build_overview, list_projects, project_detail
 from app.parser import parse_session_file
 from app.store import SessionStore
+from app.tooling_config import InstalledTooling, discover_installed_tooling
 from app.watcher import live_snapshot
 
 app = FastAPI(title="CCDashboard")
@@ -39,6 +40,11 @@ def health():
 @app.get("/api/config")
 def config():
     return {"currency": get_settings().currency}
+
+
+@app.get("/api/tooling-config", response_model=InstalledTooling)
+def tooling_config(settings: Settings = Depends(get_settings)):
+    return discover_installed_tooling(settings)
 
 
 @app.get("/api/overview")

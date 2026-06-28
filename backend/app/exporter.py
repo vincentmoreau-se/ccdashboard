@@ -13,7 +13,12 @@ from app.identity import resolve_user_id
 from app.metrics import list_projects
 from app.models import ProjectSummary, SessionSummary
 
-ENRICHED_FIELDS = ("ai_title", "git_branch", "cc_version")
+# Fields nulled in the default (non-enriched) payload. cwd and file_path are
+# absolute local filesystem paths — per spec §7 the default payload must contain
+# no file path, so they are opt-in (sent only when export.include_enriched=True).
+# The central server keys on source + session_id and derives project from the
+# `project` field, not cwd/file_path, so nulling them is safe.
+ENRICHED_FIELDS = ("ai_title", "git_branch", "cc_version", "cwd", "file_path")
 
 
 def _session_payload(s: SessionSummary, include_enriched: bool) -> dict:

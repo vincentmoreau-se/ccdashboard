@@ -7,6 +7,7 @@ import Overview from "./pages/Overview";
 import ProjectDetail from "./pages/ProjectDetail";
 import Projects from "./pages/Projects";
 import Session from "./pages/Session";
+import TechTooling from "./pages/TechTooling";
 import { theme } from "./theme";
 
 const navLinkStyle = ({ isActive }: { isActive: boolean }): CSSProperties => ({
@@ -70,6 +71,7 @@ export default function App() {
             <NavLink to="/" end style={navLinkStyle}>Overview</NavLink>
             <NavLink to="/insights" style={navLinkStyle}>Insights</NavLink>
             <NavLink to="/projects" style={navLinkStyle}>Projects</NavLink>
+            <NavLink to="/tech" style={navLinkStyle}>Tech & Tooling</NavLink>
             <NavLink to="/live" style={navLinkStyle}>Live</NavLink>
           </nav>
         </div>
@@ -82,6 +84,7 @@ export default function App() {
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/:name" element={<ProjectDetail />} />
           <Route path="/sessions/:id" element={<Session />} />
+          <Route path="/tech" element={<TechTooling />} />
           <Route path="/live" element={<Live />} />
         </Routes>
       </main>

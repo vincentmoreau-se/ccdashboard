@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Iterable
@@ -8,6 +9,12 @@ from typing import Iterable
 from pydantic import BaseModel, Field
 
 from app.models import MessageRecord, Usage
+from app.taxonomy import (
+    framework_for_manifest,
+    frameworks_for_command,
+    language_for_path,
+    mcp_server_of,
+)
 
 
 class ParsedSession(BaseModel):
@@ -67,12 +74,33 @@ def _lines_generated_from(name: str, inp) -> int:
     return 0
 
 
+def _text_from_content(content) -> str:
+    """Extract all plain text from message content (string or list of blocks)."""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for c in content:
+            if isinstance(c, dict) and c.get("type") == "text":
+                text = c.get("text", "")
+                if isinstance(text, str):
+                    parts.append(text)
+        return "\n".join(parts)
+    return ""
+
+
 def _record_from(obj: dict) -> MessageRecord:
     message = obj.get("message") or {}
     content = message.get("content")
     tools: list[str] = []
     kinds: list[str] = []
     lines_generated = 0
+    languages: list[str] = []
+    frameworks: list[str] = []
+    skills: list[str] = []
+    subagents: list[str] = []
+    mcp_servers: list[str] = []
+
     if isinstance(content, list):
         for c in content:
             if not isinstance(c, dict):
@@ -81,8 +109,43 @@ def _record_from(obj: dict) -> MessageRecord:
             if kind:
                 kinds.append(kind)
             if kind == "tool_use" and c.get("name"):
-                tools.append(c["name"])
-                lines_generated += _lines_generated_from(c["name"], c.get("input"))
+                name = c["name"]
+                inp = c.get("input") or {}
+                tools.append(name)
+                lines_generated += _lines_generated_from(name, inp)
+                # File path → language and manifest framework
+                fp = inp.get("file_path") or inp.get("notebook_path")
+                if fp:
+                    lang = language_for_path(fp)
+                    if lang is not None:
+                        languages.append(lang)
+                    fw = framework_for_manifest(fp)
+                    if fw is not None:
+                        frameworks.append(fw)
+                # Bash command → frameworks
+                if name == "Bash":
+                    frameworks.extend(frameworks_for_command(inp.get("command")))
+                # Skill name
+                if name == "Skill":
+                    skill = inp.get("skill")
+                    if skill:
+                        skills.append(skill)
+                # Subagent type
+                if name in {"Agent", "Task"}:
+                    subagent = inp.get("subagent_type")
+                    if subagent:
+                        subagents.append(subagent)
+                # MCP server
+                if name.startswith("mcp__"):
+                    server = mcp_server_of(name)
+                    if server is not None:
+                        mcp_servers.append(server)
+
+    # Slash commands from text content (both string and list-of-block forms)
+    slash_commands = re.findall(
+        r"<command-name>([^<]+)</command-name>", _text_from_content(content)
+    )
+
     return MessageRecord(
         uuid=obj.get("uuid"),
         parent_uuid=obj.get("parentUuid"),
@@ -96,6 +159,12 @@ def _record_from(obj: dict) -> MessageRecord:
         tools=tools,
         content_kinds=list(dict.fromkeys(kinds)),
         lines_generated=lines_generated,
+        languages=languages,
+        frameworks=frameworks,
+        skills=skills,
+        subagents=subagents,
+        mcp_servers=mcp_servers,
+        slash_commands=slash_commands,
     )
 
 
