@@ -1,15 +1,19 @@
 from __future__ import annotations
 
+import asyncio
+import json
 from functools import lru_cache
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sse_starlette.sse import EventSourceResponse
 
 from app.config import get_settings
 from app.metrics import build_overview, list_projects, project_detail
 from app.parser import parse_session_file
 from app.store import SessionStore
+from app.watcher import live_snapshot
 
 app = FastAPI(title="CCDashboard")
 
@@ -57,3 +61,13 @@ def session(session_id: str, store: SessionStore = Depends(get_store)):
             parsed = parse_session_file(Path(summary.file_path))
             return {"summary": summary, "messages": parsed.records}
     raise HTTPException(status_code=404, detail="session not found")
+
+
+@app.get("/api/live")
+async def live(store: SessionStore = Depends(get_store)):
+    async def event_generator():
+        while True:
+            yield {"data": json.dumps(live_snapshot(store))}
+            await asyncio.sleep(2)
+
+    return EventSourceResponse(event_generator())
