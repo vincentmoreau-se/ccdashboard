@@ -25,6 +25,7 @@ def summarize_session(
     cost = 0.0
     cost_known = True
     provider = default_provider
+    provider_resolved = False
     git_branch = None
     cc_version = None
     cwd = None
@@ -38,9 +39,11 @@ def summarize_session(
         for t in r.tools:
             tool_counts[t] = tool_counts.get(t, 0) + 1
         if r.type == "assistant" and r.model:
+            if not provider_resolved:
+                provider = detect_provider(r.model, default_provider)
+                provider_resolved = True
             if r.model not in models:
                 models.append(r.model)
-            provider = detect_provider(r.model, default_provider)
             total = total.add(r.usage)
             c, known = table.cost_for_usage(r.usage, r.model, provider)
             cost += c
