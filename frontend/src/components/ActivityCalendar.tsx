@@ -30,7 +30,7 @@ export default function ActivityCalendar({
   const intensity = (cost: number): string => {
     if (cost <= 0) return "rgba(255,255,255,0.05)";
     const t = Math.min(1, 0.2 + (cost / maxCost) * 0.8);
-    return `rgba(217, 119, 87, ${t.toFixed(2)})`;
+    return `rgba(18, 171, 219, ${t.toFixed(2)})`;
   };
 
   return (
@@ -70,7 +70,7 @@ export default function ActivityCalendar({
         {[0.05, 0.35, 0.6, 0.85, 1].map((t) => (
           <span
             key={t}
-            style={{ width: 12, height: 12, borderRadius: 3, background: `rgba(217, 119, 87, ${t})` }}
+            style={{ width: 12, height: 12, borderRadius: 3, background: `rgba(18, 171, 219, ${t})` }}
           />
         ))}
         <span>plus</span>

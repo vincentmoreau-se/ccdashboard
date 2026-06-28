@@ -3,15 +3,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 
-// Bundled web fonts (offline-friendly, no runtime Google Fonts request).
-import "@fontsource/fraunces/400.css";
-import "@fontsource/fraunces/600.css";
-import "@fontsource/hanken-grotesk/400.css";
-import "@fontsource/hanken-grotesk/500.css";
-import "@fontsource/hanken-grotesk/600.css";
-import "@fontsource/jetbrains-mono/400.css";
-import "@fontsource/jetbrains-mono/500.css";
-
+// Fonts (Chakra Petch + IBM Plex Mono) are loaded via Google Fonts in index.html.
 import App from "./App";
 import "./index.css";
 
