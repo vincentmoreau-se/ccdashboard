@@ -3,7 +3,8 @@ import { Link, useParams } from "react-router-dom";
 
 import { getConfig, getProject } from "../api/client";
 import KpiCard from "../components/KpiCard";
-import { formatCost, formatDuration, formatTokens } from "../lib/format";
+import { SkeletonCards } from "../components/Skeleton";
+import { formatCost, formatDuration, formatModel, formatProjectName, formatTokens } from "../lib/format";
 
 export default function ProjectDetail() {
   const { name = "" } = useParams();
@@ -13,20 +14,20 @@ export default function ProjectDetail() {
   });
   const { data: configData } = useQuery({ queryKey: ["config"], queryFn: getConfig });
   const currency = configData?.currency ?? "€";
-  if (isLoading) return <p>Chargement…</p>;
+  if (isLoading) return (<div><SkeletonCards /></div>);
   if (error || !data) return <p>Projet introuvable.</p>;
   const p = data.project;
   return (
     <div>
       <p><Link to="/projects">← Projets</Link></p>
-      <h2>{p.name}</h2>
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <KpiCard label="Sessions" value={String(p.session_count)} />
-        <KpiCard label="Tokens" value={formatTokens(p.usage.input + p.usage.output)} />
-        <KpiCard label="Coût" value={formatCost(p.cost, currency, p.cost_known)} />
+      <h2 title={p.path}>{formatProjectName(p.name)}</h2>
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+        <KpiCard label="Sessions" value={String(p.session_count)} index={0} />
+        <KpiCard label="Tokens" value={formatTokens(p.usage.input + p.usage.output)} index={1} />
+        <KpiCard label="Coût" value={formatCost(p.cost, currency, p.cost_known)} accent index={2} />
       </div>
       <h3>Sessions</h3>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <table className="data-table">
         <thead>
           <tr><th align="left">Titre / ID</th><th>Modèle</th><th>Durée</th><th>Tokens</th><th>Coût</th></tr>
         </thead>
@@ -37,12 +38,16 @@ export default function ProjectDetail() {
                 <Link to={`/sessions/${encodeURIComponent(s.session_id)}`}>
                   {s.ai_title ?? s.session_id}
                 </Link>
-                {s.is_active && <span style={{ color: "#16a34a" }}> ● live</span>}
+                {s.is_active && (
+                  <span style={{ color: "var(--green)", marginLeft: 8, fontSize: "0.8em", whiteSpace: "nowrap" }}>
+                    <span className="live-dot" /> live
+                  </span>
+                )}
               </td>
-              <td align="center">{s.models[0] ?? "—"}</td>
-              <td align="center">{formatDuration(s.duration_seconds)}</td>
-              <td align="center">{formatTokens(s.usage.input + s.usage.output)}</td>
-              <td align="center">{formatCost(s.cost, currency, s.cost_known)}</td>
+              <td>{formatModel(s.models[0] ?? "—")}</td>
+              <td>{formatDuration(s.duration_seconds)}</td>
+              <td>{formatTokens(s.usage.input + s.usage.output)}</td>
+              <td>{formatCost(s.cost, currency, s.cost_known)}</td>
             </tr>
           ))}
         </tbody>

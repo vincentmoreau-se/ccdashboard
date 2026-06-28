@@ -1,0 +1,169 @@
+/* ── Design tokens (mirror of src/theme.ts) ───────────────────────────── */
+:root {
+  --bg: #16140f;
+  --bg-elevated: #1c1a15;
+  --surface: #211e19;
+  --surface-hover: #28241d;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --text: #ece6dc;
+  --text-muted: #a8a094;
+  --text-faint: #6f6a60;
+  --accent: #d97757;
+  --accent-soft: rgba(217, 119, 87, 0.14);
+  --amber: #e0a34e;
+  --green: #7bb369;
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Hanken Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  color-scheme: dark;
+}
+
+/* ── Reset-ish ─────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+  background-color: var(--bg);
+  /* Atmosphere: warm coral halo top, deepening to slate; fixed so it doesn't scroll. */
+  background-image:
+    radial-gradient(1100px 620px at 78% -8%, rgba(217, 119, 87, 0.10), transparent 60%),
+    radial-gradient(900px 600px at 8% 4%, rgba(224, 163, 78, 0.05), transparent 55%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Faint grain overlay for texture (very low opacity SVG noise). */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Typography ────────────────────────────────────────────────────────── */
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+h1 { font-size: 2rem; }
+h2 {
+  font-size: 1.4rem;
+  margin: 2rem 0 0.85rem;
+  font-optical-sizing: auto;
+}
+h3 { font-size: 1.12rem; margin: 1.6rem 0 0.6rem; }
+
+p { color: var(--text-muted); }
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+a:hover { color: #e8916f; text-decoration: underline; text-underline-offset: 3px; }
+
+/* ── Data tables ───────────────────────────────────────────────────────── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.data-table thead th {
+  text-align: right;
+  padding: 0.55rem 0.85rem;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  border-bottom: 1px solid var(--border-strong);
+  white-space: nowrap;
+}
+.data-table thead th[align="left"] { text-align: left; }
+.data-table tbody td {
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+  color: var(--text);
+  /* Numeric cells read better monospaced + tabular. */
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+/* First column is the label/name — body font, left aligned. */
+.data-table tbody td:first-child {
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  white-space: normal;
+}
+.data-table tbody tr { transition: background-color 0.12s ease; }
+.data-table tbody tr:hover { background-color: var(--surface-hover); }
+.data-table tbody tr:last-child td { border-bottom: none; }
+
+/* ── Live pulse dot ────────────────────────────────────────────────────── */
+.live-dot {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 0 rgba(123, 179, 105, 0.6);
+  animation: live-pulse 1.8s ease-out infinite;
+  vertical-align: middle;
+}
+@keyframes live-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(123, 179, 105, 0.55); }
+  70%  { box-shadow: 0 0 0 7px rgba(123, 179, 105, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(123, 179, 105, 0); }
+}
+
+/* ── Staggered card reveal on load ─────────────────────────────────────── */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.reveal { animation: rise-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .live-dot { animation: none; }
+}
+
+/* ── Custom scrollbar ──────────────────────────────────────────────────── */
+* { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); background-clip: padding-box; }
+
+::selection { background: var(--accent-soft); color: var(--text); }
+
+/* Recharts: kill the focus outline rectangle on bars/dots. */
+.recharts-wrapper :focus { outline: none; }

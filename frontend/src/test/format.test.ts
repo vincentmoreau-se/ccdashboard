@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { formatCost, formatDuration, formatTokens } from "../lib/format";
+import {
+  formatCost, formatDuration, formatPercent, formatProjectName, formatTokens,
+} from "../lib/format";
 
 describe("format", () => {
   it("formats tokens", () => {
@@ -17,5 +19,16 @@ describe("format", () => {
   it("formats duration", () => {
     expect(formatDuration(null)).toBe("—");
     expect(formatDuration(125)).toBe("2m5s");
+  });
+
+  it("shortens project slugs", () => {
+    expect(formatProjectName("-home-vemore-workspace-ccdashboard")).toBe("ccdashboard");
+    expect(formatProjectName("-home-vemore-workspace-ccdashboard-server")).toBe("ccdashboard-server");
+    expect(formatProjectName("plain")).toBe("plain");
+  });
+
+  it("formats percentages", () => {
+    expect(formatPercent(0.1234, 1)).toBe("12.3%");
+    expect(formatPercent(Infinity)).toBe("—");
   });
 });

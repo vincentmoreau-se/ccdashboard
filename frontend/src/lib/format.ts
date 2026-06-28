@@ -16,3 +16,42 @@ export function formatDuration(seconds: number | null): string {
   if (m >= 60) return `${Math.floor(m / 60)}h${m % 60}m`;
   return `${m}m${s}s`;
 }
+
+// Claude Code session dirs encode the cwd as a slug, e.g.
+// "-home-vemore-workspace-ccdashboard" -> show just "ccdashboard".
+export function formatProjectName(name: string): string {
+  const cleaned = name.replace(/^-+/, "");
+  const parts = cleaned.split("-").filter(Boolean);
+  const tail = parts.slice(-1)[0] ?? name;
+  // Re-glue a trailing "-server"/"-app"-like segment if the slug had several words
+  // after the workspace root; heuristic: keep the last segment after "workspace".
+  const wsIdx = parts.lastIndexOf("workspace");
+  if (wsIdx >= 0 && wsIdx < parts.length - 1) return parts.slice(wsIdx + 1).join("-");
+  return tail;
+}
+
+// "claude-opus-4-8" -> "Opus 4.8"; unknown / "(none)" pass through unchanged.
+export function formatModel(model: string): string {
+  const m = model.toLowerCase();
+  const fam = m.includes("opus")
+    ? "Opus"
+    : m.includes("sonnet")
+      ? "Sonnet"
+      : m.includes("haiku")
+        ? "Haiku"
+        : null;
+  if (!fam) return model;
+  const ver = model.match(/(\d+)-(\d+)/);
+  return ver ? `${fam} ${ver[1]}.${ver[2]}` : fam;
+}
+
+export function formatPercent(fraction: number, digits = 0): string {
+  if (!isFinite(fraction)) return "—";
+  return `${(fraction * 100).toFixed(digits)}%`;
+}
+
+export function formatCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  return String(n);
+}

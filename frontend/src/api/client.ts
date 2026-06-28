@@ -10,11 +10,15 @@ export interface SessionSummary {
   ai_title: string | null; started_at: string | null; ended_at: string | null;
   duration_seconds: number | null; is_active: boolean; models: string[];
   provider: string; git_branch: string | null; cc_version: string | null;
-  message_count: number; usage: Usage; cost: number; cost_known: boolean;
-  tool_counts: Record<string, number>; skipped_lines: number;
+  message_count: number; usage: Usage; lines_generated: number;
+  cost: number; cost_known: boolean;
+  cache_savings: number;
+  tool_counts: Record<string, number>; content_kind_counts: Record<string, number>;
+  skipped_lines: number;
 }
 export interface ProjectSummary {
   name: string; path: string; session_count: number; usage: Usage;
+  lines_generated: number;
   cost: number; cost_known: boolean; last_activity: string | null; models: string[];
 }
 export interface ModelStat {
@@ -26,14 +30,17 @@ export interface TimeBucket {
 }
 export interface Overview {
   session_count: number; total_usage: Usage; total_cost: number;
-  cost_known: boolean; by_model: ModelStat[]; by_project: ProjectSummary[];
-  timeseries: TimeBucket[];
+  cost_known: boolean; cache_savings: number;
+  by_model: ModelStat[]; by_project: ProjectSummary[]; timeseries: TimeBucket[];
+  tool_counts: Record<string, number>; content_kind_counts: Record<string, number>;
+  top_sessions: SessionSummary[];
 }
 export interface MessageRecord {
   uuid: string | null; parent_uuid: string | null; timestamp: string | null;
   type: string; model: string | null; git_branch: string | null;
   cwd: string | null; cc_version: string | null; usage: Usage;
-  tools: string[]; content_kinds: string[];
+  tools: string[]; content_kinds: string[]; lines_generated: number;
+  cost: number; cost_known: boolean;
 }
 
 async function get<T>(path: string): Promise<T> {
