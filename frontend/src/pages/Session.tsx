@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 
-import { getSession } from "../api/client";
+import { getConfig, getSession } from "../api/client";
 import { formatCost, formatDuration, formatTokens } from "../lib/format";
 
 export default function Session() {
@@ -10,6 +10,8 @@ export default function Session() {
     queryKey: ["session", id],
     queryFn: () => getSession(id),
   });
+  const { data: configData } = useQuery({ queryKey: ["config"], queryFn: getConfig });
+  const currency = configData?.currency ?? "€";
   if (isLoading) return <p>Chargement…</p>;
   if (error || !data) return <p>Session introuvable.</p>;
   const s = data.summary;
@@ -21,7 +23,7 @@ export default function Session() {
         <li>Modèle(s) : {s.models.join(", ") || "—"} ({s.provider})</li>
         <li>Branche : {s.git_branch ?? "—"} · CC {s.cc_version ?? "—"}</li>
         <li>Durée : {formatDuration(s.duration_seconds)} · Messages : {s.message_count}</li>
-        <li>Tokens : {formatTokens(s.usage.input + s.usage.output)} · Coût : {formatCost(s.cost, "€", s.cost_known)}</li>
+        <li>Tokens : {formatTokens(s.usage.input + s.usage.output)} · Coût : {formatCost(s.cost, currency, s.cost_known)}</li>
       </ul>
       <h3>Timeline</h3>
       <ol>

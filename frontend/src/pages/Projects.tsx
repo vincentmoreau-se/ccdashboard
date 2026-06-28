@@ -1,12 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
-import { getProjects } from "../api/client";
+import { getConfig, getProjects } from "../api/client";
 import UnknownCostBadge from "../components/UnknownCostBadge";
 import { formatCost, formatTokens } from "../lib/format";
 
 export default function Projects() {
   const { data, isLoading, error } = useQuery({ queryKey: ["projects"], queryFn: getProjects });
+  const { data: configData } = useQuery({ queryKey: ["config"], queryFn: getConfig });
+  const currency = configData?.currency ?? "€";
   if (isLoading) return <p>Chargement…</p>;
   if (error || !data) return <p>Erreur de chargement.</p>;
   return (
@@ -25,7 +27,7 @@ export default function Projects() {
               </td>
               <td align="center">{p.session_count}</td>
               <td align="center">{formatTokens(p.usage.input + p.usage.output)}</td>
-              <td align="center">{formatCost(p.cost, "€", p.cost_known)}</td>
+              <td align="center">{formatCost(p.cost, currency, p.cost_known)}</td>
               <td align="center">{p.last_activity?.slice(0, 10) ?? "—"}</td>
             </tr>
           ))}

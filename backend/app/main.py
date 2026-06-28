@@ -36,6 +36,11 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/api/config")
+def config():
+    return {"currency": get_settings().currency}
+
+
 @app.get("/api/overview")
 def overview(store: SessionStore = Depends(get_store)):
     return build_overview(store.all_summaries())

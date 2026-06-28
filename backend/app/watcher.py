@@ -1,3 +1,4 @@
+# Live updates use periodic polling of store.all_summaries() — a deliberate simplification; no filesystem watcher needed at this scale.
 from __future__ import annotations
 
 from datetime import datetime, timezone

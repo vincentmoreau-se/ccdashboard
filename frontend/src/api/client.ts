@@ -42,6 +42,7 @@ async function get<T>(path: string): Promise<T> {
   return r.json() as Promise<T>;
 }
 
+export const getConfig = () => get<{ currency: string }>("/api/config");
 export const getOverview = () => get<Overview>("/api/overview");
 export const getProjects = () => get<ProjectSummary[]>("/api/projects");
 export const getProject = (name: string) =>

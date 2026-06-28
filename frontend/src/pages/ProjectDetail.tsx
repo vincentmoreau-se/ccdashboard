@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 
-import { getProject } from "../api/client";
+import { getConfig, getProject } from "../api/client";
 import KpiCard from "../components/KpiCard";
 import { formatCost, formatDuration, formatTokens } from "../lib/format";
 
@@ -11,6 +11,8 @@ export default function ProjectDetail() {
     queryKey: ["project", name],
     queryFn: () => getProject(name),
   });
+  const { data: configData } = useQuery({ queryKey: ["config"], queryFn: getConfig });
+  const currency = configData?.currency ?? "€";
   if (isLoading) return <p>Chargement…</p>;
   if (error || !data) return <p>Projet introuvable.</p>;
   const p = data.project;
@@ -21,7 +23,7 @@ export default function ProjectDetail() {
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         <KpiCard label="Sessions" value={String(p.session_count)} />
         <KpiCard label="Tokens" value={formatTokens(p.usage.input + p.usage.output)} />
-        <KpiCard label="Coût" value={formatCost(p.cost, "€", p.cost_known)} />
+        <KpiCard label="Coût" value={formatCost(p.cost, currency, p.cost_known)} />
       </div>
       <h3>Sessions</h3>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -40,7 +42,7 @@ export default function ProjectDetail() {
               <td align="center">{s.models[0] ?? "—"}</td>
               <td align="center">{formatDuration(s.duration_seconds)}</td>
               <td align="center">{formatTokens(s.usage.input + s.usage.output)}</td>
-              <td align="center">{formatCost(s.cost, "€", s.cost_known)}</td>
+              <td align="center">{formatCost(s.cost, currency, s.cost_known)}</td>
             </tr>
           ))}
         </tbody>

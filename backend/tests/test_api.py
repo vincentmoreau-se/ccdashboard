@@ -48,3 +48,10 @@ def test_session_detail(tmp_path):
 def test_session_404(tmp_path):
     client = _client(tmp_path)
     assert client.get("/api/sessions/nope").status_code == 404
+
+
+def test_config():
+    client = TestClient(app)
+    r = client.get("/api/config")
+    assert r.status_code == 200
+    assert "currency" in r.json()

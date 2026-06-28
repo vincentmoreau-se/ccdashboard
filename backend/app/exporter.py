@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from datetime import datetime, timezone
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 from app.config import Settings
 from app.metrics import list_projects
@@ -73,9 +76,11 @@ class Exporter:
             resp = await client.post(
                 self._settings.export_endpoint, json=payload, headers=headers, timeout=30
             )
-        except httpx.HTTPError:
+        except httpx.HTTPError as exc:
+            logger.warning("export POST failed: %s", exc)
             return False
         if resp.status_code // 100 != 2:
+            logger.warning("export endpoint returned status %s", resp.status_code)
             return False
         for s in pending:
             self._cursor[s.session_id] = self._key(s)
