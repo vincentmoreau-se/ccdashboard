@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import EventSourceResponse
 
 from app.config import get_settings
+from app.exporter import Exporter
 from app.metrics import build_overview, list_projects, project_detail
 from app.parser import parse_session_file
 from app.store import SessionStore
@@ -71,3 +72,11 @@ async def live(store: SessionStore = Depends(get_store)):
             await asyncio.sleep(2)
 
     return EventSourceResponse(event_generator())
+
+
+@app.on_event("startup")
+async def _start_exporter():
+    settings = get_settings()
+    if settings.export_enabled and settings.export_endpoint:
+        exporter = Exporter(settings, get_store())
+        asyncio.create_task(exporter.run_periodic())
