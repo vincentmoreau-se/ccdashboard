@@ -1,13 +1,20 @@
 import shutil
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
-from app.config import Settings, get_settings
+from app.config import Settings
 from app.main import app, get_store
 from app.store import SessionStore
 
 FIX = Path(__file__).parent / "fixtures"
+
+
+@pytest.fixture(autouse=True)
+def _clear_overrides():
+    yield
+    app.dependency_overrides.clear()
 
 
 def _client(tmp_path):
