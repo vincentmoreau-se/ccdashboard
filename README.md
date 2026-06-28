@@ -13,6 +13,18 @@ sur http://localhost:8000 et le **frontend** sur http://localhost:5173 (à ouvri
 dans le navigateur). `Ctrl+C` arrête les deux. Les sections ci-dessous détaillent
 le lancement manuel service par service.
 
+### Export vers le serveur central (hackathon)
+
+Pour aussi pousser les agrégats vers le serveur central, l'URL d'ingestion et le
+token sont passés en paramètres (rien n'est codé en dur) :
+
+    ./start.sh --export <URL> <TOKEN>
+    # ex. : ./start.sh --export https://<host>/ccdash/ingest <token-ingest>
+
+Les deux valeurs peuvent aussi venir des variables d'environnement
+`CCDASH_EXPORT_ENDPOINT` / `CCDASH_EXPORT_TOKEN`. Options utiles :
+`--check` (affiche la config résolue puis quitte, sans rien lancer), `--help`.
+
 ## Backend (FastAPI, uv)
 
     cd backend
