@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     export_endpoint: str | None = None
     export_token: str | None = None
     export_interval_minutes: int = 15
+    # When > 0, overrides export_interval_minutes. Use a small value (e.g. 30s)
+    # for near-real-time live tracking on the central server (whose live window
+    # is ~120s — push more often than that to keep sessions "live").
+    export_interval_seconds: int = 0
     export_include_enriched: bool = False
     export_machine_id: str = socket.gethostname()
     export_user_id: str | None = None

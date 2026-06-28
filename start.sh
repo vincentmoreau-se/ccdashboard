@@ -68,13 +68,16 @@ if [ "$EXPORT_ENABLED" = true ]; then
   export CCDASH_EXPORT_ENABLED=true
   [ -n "$ENDPOINT_ARG" ] && export CCDASH_EXPORT_ENDPOINT="$ENDPOINT_ARG"
   [ -n "$TOKEN_ARG" ] && export CCDASH_EXPORT_TOKEN="$TOKEN_ARG"
+  # Push often enough to stay inside the server's ~120s live window so in-progress
+  # sessions show up on the central Flight Deck. Override with the env var.
+  export CCDASH_EXPORT_INTERVAL_SECONDS="${CCDASH_EXPORT_INTERVAL_SECONDS:-30}"
   if [ -z "${CCDASH_EXPORT_ENDPOINT:-}" ] || [ -z "${CCDASH_EXPORT_TOKEN:-}" ]; then
     echo "✗ --export requires both an ingest URL and a token."
     echo "  Inline:  ./start.sh --export <URL> <TOKEN>"
     echo "  Env:     CCDASH_EXPORT_ENDPOINT=<URL> CCDASH_EXPORT_TOKEN=<TOKEN> ./start.sh --export"
     exit 1
   fi
-  echo "▶ Central export ENABLED → $CCDASH_EXPORT_ENDPOINT (token: ***hidden***)"
+  echo "▶ Central export ENABLED → $CCDASH_EXPORT_ENDPOINT (token: ***hidden***, every ${CCDASH_EXPORT_INTERVAL_SECONDS}s)"
 else
   echo "▶ Central export disabled (local only) — use --export to push to the server."
 fi
