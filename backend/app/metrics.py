@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from app.models import (
     ModelStat,
     Overview,
@@ -35,7 +37,10 @@ def list_projects(summaries: list[SessionSummary]) -> list[ProjectSummary]:
             p.last_activity = last
     return sorted(
         acc.values(),
-        key=lambda x: x.last_activity or x.name,  # type: ignore[return-value]
+        key=lambda x: (
+            x.last_activity is not None,
+            x.last_activity or datetime.min.replace(tzinfo=timezone.utc),
+        ),
         reverse=True,
     )
 
@@ -93,7 +98,11 @@ def project_detail(
     agg = list_projects(sessions)[0]
     sessions = sorted(
         sessions,
-        key=lambda s: s.ended_at or s.started_at or s.session_id,
+        key=lambda s: (
+            (s.ended_at or s.started_at) is not None,
+            (s.ended_at or s.started_at)
+            or datetime.min.replace(tzinfo=timezone.utc),
+        ),
         reverse=True,
     )
     return agg, sessions
