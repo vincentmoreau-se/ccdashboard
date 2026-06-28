@@ -2450,6 +2450,113 @@ git commit -m "feat(frontend): live page (SSE) and README"
 
 ---
 
+## Task 16: Browser end-to-end smoke test (Playwright)
+
+**Files:**
+- Create: `frontend/tests/e2e/dashboard.spec.ts`, `frontend/playwright.config.ts`
+- Modify: `frontend/package.json` (add `@playwright/test` devDep + `test:e2e` script)
+- Create: `docs/superpowers/e2e-screenshots/` (output dir for captured screenshots, gitignored)
+
+**Purpose:** Verify the real, running app in a browser end-to-end — not just unit tests. The dashboard reads the live `~/.claude/projects` data on this machine, so the test runs against real session data and asserts the four areas render.
+
+**Interfaces:**
+- Consumes the running backend (`uvicorn app.main:app` on port 8000) and frontend dev server (`vite` on port 5173). Playwright's `webServer` config starts both automatically.
+
+**Approach:** Use `@playwright/test` (Chromium). `playwright.config.ts` declares two `webServer` entries (backend + frontend) so `npx playwright test` boots them, waits for readiness, runs the spec, and tears them down. The spec is resilient to variable real data: it asserts on structure (headings, nav, table presence, row counts ≥ 0) rather than exact values, and captures screenshots for visual confirmation.
+
+- [ ] **Step 1: Add dependency and script**
+
+In `frontend/package.json` add to devDependencies `"@playwright/test": "^1.45.0"` and to scripts `"test:e2e": "playwright test"`. Then run `cd frontend && npm install && npx playwright install chromium`.
+
+- [ ] **Step 2: Create `frontend/playwright.config.ts`**
+
+```typescript
+import { defineConfig } from "@playwright/test";
+
+export default defineConfig({
+  testDir: "./tests/e2e",
+  timeout: 30_000,
+  use: {
+    baseURL: "http://localhost:5173",
+    screenshot: "only-on-failure",
+    trace: "retain-on-failure",
+  },
+  webServer: [
+    {
+      command: "uv run uvicorn app.main:app --port 8000",
+      cwd: "../backend",
+      url: "http://localhost:8000/api/health",
+      reuseExistingServer: true,
+      timeout: 60_000,
+    },
+    {
+      command: "npm run dev -- --port 5173",
+      url: "http://localhost:5173",
+      reuseExistingServer: true,
+      timeout: 60_000,
+    },
+  ],
+});
+```
+
+- [ ] **Step 3: Write the e2e spec `frontend/tests/e2e/dashboard.spec.ts`**
+
+```typescript
+import { expect, test } from "@playwright/test";
+
+const SHOTS = "../docs/superpowers/e2e-screenshots";
+
+test("overview loads and shows KPIs", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "CCDashboard" })).toBeVisible();
+  // KPI labels from Overview.tsx
+  await expect(page.getByText("Sessions")).toBeVisible();
+  await expect(page.getByText("Coût total")).toBeVisible();
+  await page.screenshot({ path: `${SHOTS}/overview.png`, fullPage: true });
+});
+
+test("navigate Projects -> ProjectDetail -> Session", async ({ page }) => {
+  await page.goto("/projects");
+  await expect(page.getByRole("heading", { name: "Projets" })).toBeVisible();
+  const firstProjectLink = page.locator("table a").first();
+  await expect(firstProjectLink).toBeVisible();
+  await firstProjectLink.click();
+  // ProjectDetail: sessions table; click first session if any
+  await expect(page.getByRole("heading", { name: "Sessions" })).toBeVisible();
+  await page.screenshot({ path: `${SHOTS}/project-detail.png`, fullPage: true });
+  const firstSession = page.locator("table a").first();
+  if (await firstSession.count()) {
+    await firstSession.click();
+    await expect(page.getByRole("heading", { name: "Timeline" })).toBeVisible();
+    await page.screenshot({ path: `${SHOTS}/session.png`, fullPage: true });
+  }
+});
+
+test("live page renders", async ({ page }) => {
+  await page.goto("/live");
+  await expect(page.getByRole("heading", { name: /Sessions actives/ })).toBeVisible();
+  await page.screenshot({ path: `${SHOTS}/live.png`, fullPage: true });
+});
+```
+
+- [ ] **Step 4: Gitignore screenshots and Playwright artifacts**
+
+Add to root `.gitignore`: `docs/superpowers/e2e-screenshots/`, `frontend/playwright-report/`, `frontend/test-results/`.
+
+- [ ] **Step 5: Run the e2e suite**
+
+Run: `cd frontend && npx playwright test`
+Expected: 3 passed (or the session step skipped if no sessions exist). The webServer config boots backend + frontend automatically. Screenshots written to `docs/superpowers/e2e-screenshots/`.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add frontend/playwright.config.ts frontend/tests/e2e frontend/package.json frontend/package-lock.json .gitignore
+git commit -m "test(frontend): browser end-to-end smoke test with Playwright"
+```
+
+---
+
 ## Self-Review
 
 **Spec coverage:**

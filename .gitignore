@@ -3,3 +3,9 @@ __pycache__/
 *.pyc
 .venv/
 dist/
+.superpowers/
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+docs/superpowers/e2e-screenshots/
+frontend/playwright-report/
+frontend/test-results/
