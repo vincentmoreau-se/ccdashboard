@@ -8,6 +8,13 @@ test("overview loads and shows KPIs", async ({ page }) => {
   // KPI labels from Overview.tsx
   await expect(page.getByText("Sessions").first()).toBeVisible();
   await expect(page.getByText("Coût total")).toBeVisible();
+  // Assert the "Activité & coût par jour" chart genuinely renders bars
+  // against real data, and let the Recharts enter-animation settle so the
+  // screenshot shows populated bars (not a mid-animation empty chart).
+  const bars = page.locator(".recharts-bar-rectangle");
+  await bars.first().waitFor({ state: "visible", timeout: 10_000 });
+  await expect.poll(async () => bars.count()).toBeGreaterThan(0);
+  await page.waitForTimeout(1800); // let Recharts enter-animation settle
   await page.screenshot({ path: `${SHOTS}/overview.png`, fullPage: true });
 });
 
