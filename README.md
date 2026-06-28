@@ -2,6 +2,17 @@
 
 Dashboard local pour monitorer les sessions Claude Code (`~/.claude/projects`).
 
+## Démarrage rapide (une ligne)
+
+Prérequis : [`uv`](https://docs.astral.sh/uv/) et [Node.js/`npm`](https://nodejs.org/).
+
+    git clone https://github.com/vincentmoreau-se/ccdashboard.git && cd ccdashboard && ./start.sh
+
+`./start.sh` installe les dépendances des deux services puis démarre le **backend**
+sur http://localhost:8000 et le **frontend** sur http://localhost:5173 (à ouvrir
+dans le navigateur). `Ctrl+C` arrête les deux. Les sections ci-dessous détaillent
+le lancement manuel service par service.
+
 ## Backend (FastAPI, uv)
 
     cd backend
@@ -30,7 +41,11 @@ Build : `npm run build` · Tests : `npm test`
 | `CCDASH_EXPORT_TOKEN` | — | bearer token |
 | `CCDASH_EXPORT_INTERVAL_MINUTES` | `15` | période d'envoi |
 | `CCDASH_EXPORT_INCLUDE_ENRICHED` | `false` | inclut titres/branche/version |
-| `CCDASH_EXPORT_MACHINE_ID` / `_USER_ID` / `_INSTANCE_ID` | hostname / `unknown` / `default` | identité source |
+| `CCDASH_EXPORT_MACHINE_ID` / `_USER_ID` / `_INSTANCE_ID` | hostname / *dérivé* / `default` | identité source |
+
+`user_id` est **dérivé** si non forcé via `CCDASH_EXPORT_USER_ID` :
+`key:<sha256(ANTHROPIC_API_KEY de ~/.claude/settings.json)>` si la clé existe
+(la clé brute n'est jamais transmise), sinon `anon:<uuid persisté localement>`.
 
 ## Prix
 

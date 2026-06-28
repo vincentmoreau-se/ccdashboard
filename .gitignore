@@ -9,3 +9,14 @@ tsconfig.tsbuildinfo
 docs/superpowers/e2e-screenshots/
 frontend/playwright-report/
 frontend/test-results/
+
+# Local secrets / env (backend reads backend/.env; Vite reads frontend/.env*)
+.env
+.env.*
+!.env.example
+
+# Local tooling & ad-hoc artifacts (never commit — may hold credentials)
+.claude/
+.playwright-mcp/
+/tip.png
+/tip2.png
