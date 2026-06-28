@@ -1,0 +1,99 @@
+from __future__ import annotations
+
+from datetime import datetime
+
+from pydantic import BaseModel, Field
+
+
+class Usage(BaseModel):
+    input: int = 0
+    output: int = 0
+    cache_write_5m: int = 0
+    cache_write_1h: int = 0
+    cache_read: int = 0
+    web_search: int = 0
+    web_fetch: int = 0
+
+    def add(self, other: "Usage") -> "Usage":
+        return Usage(
+            input=self.input + other.input,
+            output=self.output + other.output,
+            cache_write_5m=self.cache_write_5m + other.cache_write_5m,
+            cache_write_1h=self.cache_write_1h + other.cache_write_1h,
+            cache_read=self.cache_read + other.cache_read,
+            web_search=self.web_search + other.web_search,
+            web_fetch=self.web_fetch + other.web_fetch,
+        )
+
+
+class MessageRecord(BaseModel):
+    uuid: str | None = None
+    parent_uuid: str | None = None
+    timestamp: datetime | None = None
+    type: str
+    model: str | None = None
+    git_branch: str | None = None
+    cwd: str | None = None
+    cc_version: str | None = None
+    usage: Usage = Field(default_factory=Usage)
+    tools: list[str] = Field(default_factory=list)
+    content_kinds: list[str] = Field(default_factory=list)
+
+
+class SessionSummary(BaseModel):
+    session_id: str
+    project: str
+    cwd: str | None = None
+    file_path: str
+    ai_title: str | None = None
+    started_at: datetime | None = None
+    ended_at: datetime | None = None
+    duration_seconds: float | None = None
+    is_active: bool = False
+    models: list[str] = Field(default_factory=list)
+    provider: str = "anthropic"
+    git_branch: str | None = None
+    cc_version: str | None = None
+    message_count: int = 0
+    usage: Usage = Field(default_factory=Usage)
+    cost: float = 0.0
+    cost_known: bool = True
+    tool_counts: dict[str, int] = Field(default_factory=dict)
+    skipped_lines: int = 0
+
+
+class ProjectSummary(BaseModel):
+    name: str
+    path: str
+    session_count: int = 0
+    usage: Usage = Field(default_factory=Usage)
+    cost: float = 0.0
+    cost_known: bool = True
+    last_activity: datetime | None = None
+    models: list[str] = Field(default_factory=list)
+
+
+class ModelStat(BaseModel):
+    model: str
+    provider: str
+    usage: Usage = Field(default_factory=Usage)
+    cost: float = 0.0
+    cost_known: bool = True
+    session_count: int = 0
+
+
+class TimeBucket(BaseModel):
+    date: str
+    session_count: int = 0
+    usage: Usage = Field(default_factory=Usage)
+    cost: float = 0.0
+
+
+class Overview(BaseModel):
+    session_count: int = 0
+    total_usage: Usage = Field(default_factory=Usage)
+    total_cost: float = 0.0
+    cost_known: bool = True
+    by_model: list[ModelStat] = Field(default_factory=list)
+    by_project: list[ProjectSummary] = Field(default_factory=list)
+    timeseries: list[TimeBucket] = Field(default_factory=list)
