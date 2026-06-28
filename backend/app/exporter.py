@@ -54,12 +54,21 @@ class Exporter:
         self._user_id = resolve_user_id(settings)
 
     def _key(self, s: SessionSummary) -> str:
-        return (s.ended_at or s.started_at).isoformat() if (s.ended_at or s.started_at) else ""
+        # Include activity signals (message_count, is_active) so a session is
+        # re-sent as it grows or when it flips active->inactive — not just when it
+        # ends. Without this, an in-progress session would be sent once and its
+        # totals/activity would freeze on the server.
+        t = s.ended_at or s.started_at
+        base = t.isoformat() if t else ""
+        return f"{base}|{s.message_count}|{int(s.is_active)}"
 
     def pending(self, summaries: list[SessionSummary]) -> list[SessionSummary]:
         out = []
         for s in summaries:
-            if self._cursor.get(s.session_id) != self._key(s):
+            # Always re-emit active sessions so the central server keeps refreshing
+            # their server_updated_at and they stay inside its live window;
+            # otherwise re-send only when something changed since the last push.
+            if s.is_active or self._cursor.get(s.session_id) != self._key(s):
                 out.append(s)
         return out
 
@@ -93,7 +102,11 @@ class Exporter:
     async def run_periodic(self) -> None:
         if not self._settings.export_enabled or not self._settings.export_endpoint:
             return
+        delay = (
+            self._settings.export_interval_seconds
+            or self._settings.export_interval_minutes * 60
+        )
         async with httpx.AsyncClient() as client:
             while True:
                 await self.send_once(client)
-                await asyncio.sleep(self._settings.export_interval_minutes * 60)
+                await asyncio.sleep(delay)
