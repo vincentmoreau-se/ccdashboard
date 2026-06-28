@@ -20,7 +20,7 @@ app = FastAPI(title="CCDashboard")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origin_regex=get_settings().cors_origin_regex,
     allow_methods=["*"],
     allow_headers=["*"],
 )

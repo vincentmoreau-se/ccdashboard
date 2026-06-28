@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     pricing_path: Path = Path(__file__).resolve().parents[2] / "pricing.json"
     default_provider: str = "anthropic"
     live_active_threshold_seconds: int = 30
+    # Allow any localhost origin so the SPA works on a random dev port. A browser
+    # cannot forge a localhost Origin from an external site, so this stays safe.
+    cors_origin_regex: str = r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
 
     export_enabled: bool = False
     export_endpoint: str | None = None

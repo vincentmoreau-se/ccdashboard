@@ -9,9 +9,16 @@ Prérequis : [`uv`](https://docs.astral.sh/uv/) et [Node.js/`npm`](https://nodej
     git clone https://github.com/vincentmoreau-se/ccdashboard.git && cd ccdashboard && ./start.sh
 
 `./start.sh` installe les dépendances des deux services puis démarre le **backend**
-sur http://localhost:8000 et le **frontend** sur http://localhost:5173 (à ouvrir
-dans le navigateur). `Ctrl+C` arrête les deux. Les sections ci-dessous détaillent
-le lancement manuel service par service.
+et le **frontend** sur des **ports aléatoires libres** (pour ne pas entrer en
+conflit avec d'autres serveurs de dev sur 8000/5173). Le script **affiche l'URL
+de l'IHM locale** à ouvrir dans le navigateur, p. ex. :
+
+    ✅ CCDashboard is starting
+       ▸ Open your local IHM →  http://localhost:36851
+         (backend API           http://localhost:37126)
+
+`Ctrl+C` arrête les deux. Pour figer les ports : `CCDASH_BACKEND_PORT` /
+`CCDASH_FRONTEND_PORT`. Les sections ci-dessous détaillent le lancement manuel.
 
 ### Export vers le serveur central (hackathon)
 
