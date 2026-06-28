@@ -185,8 +185,17 @@ durée, nb messages, répartition d'outils, timestamps). Champs enrichis
 (`ai_title`, `git_branch`, `cc_version`) inclus **seulement si**
 `export.include_enriched = true`.
 
-**Identité (config)** : `machine_id` (défaut = hostname), `user_id`,
-`instance_id` stable — joints à chaque payload.
+**Identité** : `machine_id` (défaut = hostname), `user_id`, `instance_id` stable —
+joints à chaque payload sous `source`. Le `user_id` est **dérivé** (résolu côté
+exporter, jamais exposé par l'API) :
+1. override explicite `export.user_id` → utilisé tel quel ;
+2. sinon, si une clé API est présente dans `~/.claude/settings.json`
+   (`env.ANTHROPIC_API_KEY`, ex. la clé générée pour un hackathon) →
+   `key:<sha256(clé)>`. **La clé brute n'est jamais transmise** ; seul son hash
+   l'est, et l'organisateur précalcule la table `sha256(clé) → équipe` hors-bande
+   pour rattacher chaque personne à son équipe ;
+3. sinon → `anon:<uuid>`, un UUID aléatoire généré une fois et persisté localement
+   (`~/.claude/.ccdashboard_user_id`) — anonyme, non rattachable à une équipe.
 
 **Déclenchement** : tâche de fond **périodique** (intervalle configurable,
 ex. 15 min) tant que le dashboard tourne. Envoi **incrémental** : curseur
