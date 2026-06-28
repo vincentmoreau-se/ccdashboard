@@ -43,6 +43,9 @@ def test_session_detail(tmp_path):
     body = r.json()
     assert body["summary"]["session_id"] == "sess-1"
     assert len(body["messages"]) == 3
+    # every message carries a per-message cost; the priced assistant turn is > 0.
+    assert all("cost" in m and "cost_known" in m for m in body["messages"])
+    assert any(m["cost"] > 0 for m in body["messages"])
 
 
 def test_session_404(tmp_path):

@@ -4,10 +4,10 @@ import time
 from pathlib import Path
 
 from app.config import Settings
-from app.models import SessionSummary
+from app.models import MessageRecord, SessionSummary
 from app.parser import parse_session_file
 from app.pricing import PriceTable
-from app.summary import summarize_session
+from app.summary import is_priceable_model, summarize_session
 
 
 class SessionStore:
@@ -42,6 +42,24 @@ class SessionStore:
         )
         self._cache[key] = (mtime, summary)
         return summary
+
+    def with_message_costs(
+        self, records: list[MessageRecord], provider: str
+    ) -> list[MessageRecord]:
+        """Attach a per-message cost to each record for the session timeline.
+
+        Non-priceable turns (user messages, ``<synthetic>`` placeholders) have no
+        billable model, so they are reported as a known cost of ``0.0`` rather than
+        flagged unknown.
+        """
+        out: list[MessageRecord] = []
+        for r in records:
+            if is_priceable_model(r.model):
+                cost, known = self._table.cost_for_usage(r.usage, r.model, provider)
+            else:
+                cost, known = 0.0, True
+            out.append(r.model_copy(update={"cost": cost, "cost_known": known}))
+        return out
 
     def all_summaries(self) -> list[SessionSummary]:
         root = self._settings.projects_dir

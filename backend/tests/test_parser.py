@@ -1,8 +1,16 @@
+import json
 from pathlib import Path
 
-from app.parser import parse_session_file
+from app.parser import parse_lines, parse_session_file
 
 FIX = Path(__file__).parent / "fixtures"
+
+
+def _assistant_line(*tool_uses) -> str:
+    content = [{"type": "tool_use", "name": n, "input": i} for n, i in tool_uses]
+    return json.dumps(
+        {"type": "assistant", "sessionId": "s", "message": {"model": "claude-opus-4-8", "content": content}}
+    )
 
 
 def test_parse_sample():
@@ -20,6 +28,23 @@ def test_parse_sample():
     assert first.usage.cache_write_1h == 9665
     assert first.tools == ["Bash"]
     assert set(first.content_kinds) == {"thinking", "tool_use"}
+
+
+def test_lines_generated_per_write_class_tool():
+    line = _assistant_line(
+        ("Write", {"content": "a\nb\nc"}),                       # 3
+        ("Edit", {"old_string": "1\n2\n3\n4", "new_string": "x\ny"}),  # 2, old ignored
+        ("MultiEdit", {"edits": [{"new_string": "1\n2"}, {"new_string": "3"}]}),  # 3
+        ("NotebookEdit", {"new_source": "p\nq\nr\ns"}),          # 4
+        ("Bash", {"command": "ls\n-la"}),                        # 0 (not a write tool)
+    )
+    rec = parse_lines([line]).records[0]
+    assert rec.lines_generated == 3 + 2 + 3 + 4
+
+
+def test_lines_generated_defaults_zero_without_write_tools():
+    p = parse_session_file(FIX / "sample.jsonl")
+    assert all(r.lines_generated == 0 for r in p.records)  # sample has only Bash
 
 
 def test_parse_handles_corruption_and_missing_usage():

@@ -41,11 +41,38 @@ def _usage_from(message: dict) -> Usage:
     )
 
 
+def _count_lines(text) -> int:
+    if not isinstance(text, str) or not text:
+        return 0
+    return len(text.splitlines())
+
+
+def _lines_generated_from(name: str, inp) -> int:
+    """Lines produced by a write-class tool, from its ``input`` (never ``old_string``)."""
+    if not isinstance(inp, dict):
+        return 0
+    if name == "Write":
+        return _count_lines(inp.get("content"))
+    if name == "Edit":
+        return _count_lines(inp.get("new_string"))
+    if name == "MultiEdit":
+        edits = inp.get("edits")
+        if not isinstance(edits, list):
+            return 0
+        return sum(
+            _count_lines(e.get("new_string")) for e in edits if isinstance(e, dict)
+        )
+    if name == "NotebookEdit":
+        return _count_lines(inp.get("new_source"))
+    return 0
+
+
 def _record_from(obj: dict) -> MessageRecord:
     message = obj.get("message") or {}
     content = message.get("content")
     tools: list[str] = []
     kinds: list[str] = []
+    lines_generated = 0
     if isinstance(content, list):
         for c in content:
             if not isinstance(c, dict):
@@ -55,6 +82,7 @@ def _record_from(obj: dict) -> MessageRecord:
                 kinds.append(kind)
             if kind == "tool_use" and c.get("name"):
                 tools.append(c["name"])
+                lines_generated += _lines_generated_from(c["name"], c.get("input"))
     return MessageRecord(
         uuid=obj.get("uuid"),
         parent_uuid=obj.get("parentUuid"),
@@ -67,6 +95,7 @@ def _record_from(obj: dict) -> MessageRecord:
         usage=_usage_from(message),
         tools=tools,
         content_kinds=list(dict.fromkeys(kinds)),
+        lines_generated=lines_generated,
     )
 
 

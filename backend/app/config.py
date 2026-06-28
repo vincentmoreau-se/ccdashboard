@@ -20,8 +20,10 @@ class Settings(BaseSettings):
     export_interval_minutes: int = 15
     export_include_enriched: bool = False
     export_machine_id: str = socket.gethostname()
-    export_user_id: str = "unknown"
+    export_user_id: str | None = None
     export_instance_id: str = "default"
+    claude_settings_path: Path = Path.home() / ".claude" / "settings.json"
+    export_anon_id_path: Path = Path.home() / ".claude" / ".ccdashboard_user_id"
 
 
 @lru_cache

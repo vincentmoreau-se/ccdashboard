@@ -21,6 +21,23 @@ def test_cost_unknown_model_flagged():
     assert cost == 0.0
 
 
+def test_cache_savings():
+    table = PriceTable.load(PRICING)
+    # 1M cache-read tokens on opus: input 5.0 vs cache_read 0.5 per million => saved 4.5.
+    saved = table.cache_savings_for_usage(
+        Usage(cache_read=1_000_000), "claude-opus-4-8", "anthropic"
+    )
+    assert saved == 4.5
+
+
+def test_cache_savings_unknown_model_is_zero():
+    table = PriceTable.load(PRICING)
+    saved = table.cache_savings_for_usage(
+        Usage(cache_read=1_000_000), "made-up-model", "anthropic"
+    )
+    assert saved == 0.0
+
+
 def test_detect_provider():
     assert detect_provider("us.anthropic.claude-opus-4-8-v1:0", "anthropic") == "bedrock"
     assert detect_provider("claude-opus-4-8", "anthropic") == "anthropic"

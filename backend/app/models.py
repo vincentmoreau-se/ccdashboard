@@ -38,6 +38,9 @@ class MessageRecord(BaseModel):
     usage: Usage = Field(default_factory=Usage)
     tools: list[str] = Field(default_factory=list)
     content_kinds: list[str] = Field(default_factory=list)
+    lines_generated: int = 0
+    cost: float = 0.0
+    cost_known: bool = True
 
 
 class SessionSummary(BaseModel):
@@ -56,9 +59,12 @@ class SessionSummary(BaseModel):
     cc_version: str | None = None
     message_count: int = 0
     usage: Usage = Field(default_factory=Usage)
+    lines_generated: int = 0
     cost: float = 0.0
     cost_known: bool = True
+    cache_savings: float = 0.0
     tool_counts: dict[str, int] = Field(default_factory=dict)
+    content_kind_counts: dict[str, int] = Field(default_factory=dict)
     skipped_lines: int = 0
 
 
@@ -67,6 +73,7 @@ class ProjectSummary(BaseModel):
     path: str
     session_count: int = 0
     usage: Usage = Field(default_factory=Usage)
+    lines_generated: int = 0
     cost: float = 0.0
     cost_known: bool = True
     last_activity: datetime | None = None
@@ -94,6 +101,10 @@ class Overview(BaseModel):
     total_usage: Usage = Field(default_factory=Usage)
     total_cost: float = 0.0
     cost_known: bool = True
+    cache_savings: float = 0.0
     by_model: list[ModelStat] = Field(default_factory=list)
     by_project: list[ProjectSummary] = Field(default_factory=list)
     timeseries: list[TimeBucket] = Field(default_factory=list)
+    tool_counts: dict[str, int] = Field(default_factory=dict)
+    content_kind_counts: dict[str, int] = Field(default_factory=dict)
+    top_sessions: list[SessionSummary] = Field(default_factory=list)

@@ -65,7 +65,8 @@ def session(session_id: str, store: SessionStore = Depends(get_store)):
     for summary in store.all_summaries():
         if summary.session_id == session_id:
             parsed = parse_session_file(Path(summary.file_path))
-            return {"summary": summary, "messages": parsed.records}
+            messages = store.with_message_costs(parsed.records, summary.provider)
+            return {"summary": summary, "messages": messages}
     raise HTTPException(status_code=404, detail="session not found")
 
 

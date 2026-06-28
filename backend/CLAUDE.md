@@ -55,6 +55,14 @@ CORS is scoped to the local frontend origin.
 `projects_dir`, `currency`, `pricing_path`, `default_provider`,
 `live_active_threshold_seconds`, and `export_*` (`enabled` default false,
 `endpoint`, `token`, `interval_minutes`, `include_enriched`, `machine_id`,
-`user_id`, `instance_id`). Export sends aggregates only unless
+`user_id`, `instance_id`), plus `claude_settings_path`
+(`~/.claude/settings.json`) and `export_anon_id_path`
+(`~/.claude/.ccdashboard_user_id`). Export sends aggregates only unless
 `include_enriched=true`; failures are logged (status only, never the token)
 and retried next cycle.
+
+`source.user_id` is **derived** by `identity.resolve_user_id` (called once in
+`Exporter.__init__`, so no side effects when export is disabled): explicit
+`user_id` override → else `key:<sha256(env.ANTHROPIC_API_KEY)>` read from
+`claude_settings_path` (raw key never sent) → else `anon:<uuid>` persisted at
+`export_anon_id_path`.

@@ -6,13 +6,28 @@ from app.models import SessionSummary, Usage
 from app.metrics import build_overview, list_projects, project_detail
 
 
-def _s(session_id, project, model, inp, out, day) -> SessionSummary:
+def _s(session_id, project, model, inp, out, day, *, cost=1.0,
+       tool_counts=None, content_kind_counts=None, cache_savings=0.0,
+       lines_generated=0) -> SessionSummary:
     ts = datetime(2026, 6, day, 12, 0, tzinfo=timezone.utc)
     return SessionSummary(
         session_id=session_id, project=project, file_path=f"/x/{session_id}.jsonl",
         started_at=ts, ended_at=ts, models=[model], provider="anthropic",
-        message_count=2, usage=Usage(input=inp, output=out), cost=1.0, cost_known=True,
+        message_count=2, usage=Usage(input=inp, output=out), cost=cost, cost_known=True,
+        cache_savings=cache_savings, lines_generated=lines_generated,
+        tool_counts=tool_counts or {}, content_kind_counts=content_kind_counts or {},
     )
+
+
+def test_list_projects_accumulates_lines_generated():
+    summaries = [
+        _s("a", "proj1", "claude-opus-4-8", 100, 10, 11, lines_generated=12),
+        _s("b", "proj1", "claude-opus-4-8", 200, 20, 12, lines_generated=8),
+        _s("c", "proj2", "claude-haiku-4-5", 50, 5, 12, lines_generated=3),
+    ]
+    projects = {p.name: p for p in list_projects(summaries)}
+    assert projects["proj1"].lines_generated == 20
+    assert projects["proj2"].lines_generated == 3
 
 
 def test_build_overview():
@@ -32,6 +47,23 @@ def test_build_overview():
     assert projects["proj1"].session_count == 2
     days = {b.date: b for b in ov.timeseries}
     assert days["2026-06-12"].session_count == 2
+
+
+def test_build_overview_aggregates_tools_kinds_savings_and_top():
+    summaries = [
+        _s("a", "proj1", "claude-opus-4-8", 100, 10, 11, cost=2.0,
+           tool_counts={"Bash": 2, "Read": 1}, content_kind_counts={"thinking": 3},
+           cache_savings=0.5),
+        _s("b", "proj2", "claude-opus-4-8", 200, 20, 12, cost=9.0,
+           tool_counts={"Bash": 1}, content_kind_counts={"tool_use": 4},
+           cache_savings=1.5),
+    ]
+    ov = build_overview(summaries)
+    assert ov.tool_counts == {"Bash": 3, "Read": 1}
+    assert ov.content_kind_counts == {"thinking": 3, "tool_use": 4}
+    assert ov.cache_savings == 2.0
+    # top_sessions sorted by cost desc.
+    assert [s.session_id for s in ov.top_sessions] == ["b", "a"]
 
 
 def test_project_detail():

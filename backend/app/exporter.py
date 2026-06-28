@@ -9,6 +9,7 @@ import httpx
 logger = logging.getLogger(__name__)
 
 from app.config import Settings
+from app.identity import resolve_user_id
 from app.metrics import list_projects
 from app.models import ProjectSummary, SessionSummary
 
@@ -28,12 +29,13 @@ def build_payload(
     projects: list[ProjectSummary],
     settings: Settings,
     sent_at: str,
+    user_id: str | None = None,
 ) -> dict:
     return {
         "schema_version": 1,
         "source": {
             "machine_id": settings.export_machine_id,
-            "user_id": settings.export_user_id,
+            "user_id": user_id if user_id is not None else resolve_user_id(settings),
             "instance_id": settings.export_instance_id,
         },
         "sent_at": sent_at,
@@ -49,6 +51,7 @@ class Exporter:
         self._settings = settings
         self._store = store
         self._cursor: dict[str, str] = {}
+        self._user_id = resolve_user_id(settings)
 
     def _key(self, s: SessionSummary) -> str:
         return (s.ended_at or s.started_at).isoformat() if (s.ended_at or s.started_at) else ""
@@ -70,6 +73,7 @@ class Exporter:
             list_projects(summaries),
             self._settings,
             sent_at=datetime.now(timezone.utc).isoformat(),
+            user_id=self._user_id,
         )
         headers = {"Authorization": f"Bearer {self._settings.export_token}"}
         try:
