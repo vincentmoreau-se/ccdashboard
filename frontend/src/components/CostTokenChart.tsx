@@ -20,8 +20,8 @@ export default function CostTokenChart({ data }: { data: TimeBucket[] }) {
         <YAxis yAxisId="right" orientation="right" />
         <Tooltip />
         <Legend />
-        <Bar yAxisId="left" dataKey="tokens" name="Tokens" fill="#93c5fd" />
-        <Line yAxisId="right" dataKey="cost" name="Coût" stroke="#ef4444" />
+        <Bar yAxisId="left" dataKey="tokens" name="Tokens" fill="#93c5fd" isAnimationActive={false} />
+        <Line yAxisId="right" dataKey="cost" name="Coût" stroke="#ef4444" isAnimationActive={false} />
       </ComposedChart>
     </ResponsiveContainer>
   );
