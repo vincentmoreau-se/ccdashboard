@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # CCDashboard — install deps and start both services with a single command.
-# Backend (FastAPI/uv) and frontend (Vite/React) bind to RANDOM free localhost
-# ports (not the usual 8000/5173) to avoid clashing with other dev servers; the
+# Backend (FastAPI/uv) and frontend (Vite/React) bind to fixed NON-STANDARD
+# localhost ports (8800 / 5800 by default — not the usual 8000/5173) so the dev
+# URL stays stable/bookmarkable while avoiding clashes with standard servers.
+# If a default port is already busy, a random free one is chosen instead. The
 # script prints the IHM URL to open. Stop everything with Ctrl+C.
 # Override ports with CCDASH_BACKEND_PORT / CCDASH_FRONTEND_PORT if needed.
 #
@@ -26,6 +28,23 @@ pick_port() {
   echo "✗ could not find a free port" >&2; return 1
 }
 
+# Fixed non-standard dev defaults (stable across launches, bookmarkable).
+DEFAULT_BACKEND_PORT=8800
+DEFAULT_FRONTEND_PORT=5800
+
+# Echo the requested port if free, otherwise a random free one (warn on stderr).
+# $1 = requested port, $2 = another port to avoid (optional).
+resolve_port() {
+  local want="$1" other="${2:-}" fb
+  if printf '%s\n' "$USED_PORTS" | grep -qx "$want" || { [ -n "$other" ] && [ "$want" = "$other" ]; }; then
+    fb=$(pick_port "$other") || return 1
+    echo "⚠ port $want busy → using random free port $fb instead" >&2
+    echo "$fb"
+  else
+    echo "$want"
+  fi
+}
+
 EXPORT_ENABLED=false
 CHECK_ONLY=false
 ENDPOINT_ARG=""
@@ -45,8 +64,9 @@ Usage: ./start.sh [--export <URL> <TOKEN>] [--check]
                        and exit (no install/run).
   -h, --help           Show this help.
 
-Ports: random free localhost ports are chosen at each launch (the IHM URL is
-printed). Pin them with CCDASH_BACKEND_PORT / CCDASH_FRONTEND_PORT.
+Ports: fixed non-standard defaults (backend 8800 / frontend 5800), stable
+across launches; a busy default falls back to a random free port. Override
+with CCDASH_BACKEND_PORT / CCDASH_FRONTEND_PORT.
 USAGE
 }
 
@@ -82,8 +102,8 @@ else
   echo "▶ Central export disabled (local only) — use --export to push to the server."
 fi
 
-BACKEND_PORT="${CCDASH_BACKEND_PORT:-$(pick_port)}"
-FRONTEND_PORT="${CCDASH_FRONTEND_PORT:-$(pick_port "$BACKEND_PORT")}"
+BACKEND_PORT="$(resolve_port "${CCDASH_BACKEND_PORT:-$DEFAULT_BACKEND_PORT}")"
+FRONTEND_PORT="$(resolve_port "${CCDASH_FRONTEND_PORT:-$DEFAULT_FRONTEND_PORT}" "$BACKEND_PORT")"
 echo "▶ Local IHM → http://localhost:$FRONTEND_PORT   (backend API → http://localhost:$BACKEND_PORT)"
 
 if [ "$CHECK_ONLY" = true ]; then
