@@ -1,0 +1,59 @@
+from __future__ import annotations
+
+from functools import lru_cache
+from pathlib import Path
+
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.config import get_settings
+from app.metrics import build_overview, list_projects, project_detail
+from app.parser import parse_session_file
+from app.store import SessionStore
+
+app = FastAPI(title="CCDashboard")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@lru_cache
+def get_store() -> SessionStore:
+    return SessionStore(get_settings())
+
+
+@app.get("/api/health")
+def health():
+    return {"status": "ok"}
+
+
+@app.get("/api/overview")
+def overview(store: SessionStore = Depends(get_store)):
+    return build_overview(store.all_summaries())
+
+
+@app.get("/api/projects")
+def projects(store: SessionStore = Depends(get_store)):
+    return list_projects(store.all_summaries())
+
+
+@app.get("/api/projects/{project}")
+def project(project: str, store: SessionStore = Depends(get_store)):
+    try:
+        agg, sessions = project_detail(store.all_summaries(), project)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="project not found")
+    return {"project": agg, "sessions": sessions}
+
+
+@app.get("/api/sessions/{session_id}")
+def session(session_id: str, store: SessionStore = Depends(get_store)):
+    for summary in store.all_summaries():
+        if summary.session_id == session_id:
+            parsed = parse_session_file(Path(summary.file_path))
+            return {"summary": summary, "messages": parsed.records}
+    raise HTTPException(status_code=404, detail="session not found")
