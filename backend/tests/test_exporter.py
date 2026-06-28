@@ -27,6 +27,7 @@ def test_payload_strips_enriched_by_default():
     sess = payload["sessions"][0]
     assert sess["ai_title"] is None
     assert sess["git_branch"] is None
+    assert sess["cc_version"] is None
     assert sess["usage"]["input"] == 10  # aggregates kept
 
 
