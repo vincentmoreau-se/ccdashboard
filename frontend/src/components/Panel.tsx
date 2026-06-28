@@ -16,10 +16,10 @@ export default function Panel({
 }) {
   return (
     <section
-      className="reveal"
+      className="reveal hud-frame"
       style={{
         background: theme.colors.surface,
-        border: `1px solid ${theme.colors.border}`,
+        border: `1px solid ${theme.colors.borderStrong}`,
         borderRadius: theme.radius.md,
         padding: "18px 20px",
         boxShadow: theme.shadow.card,

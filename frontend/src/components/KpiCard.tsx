@@ -18,7 +18,7 @@ export default function KpiCard({
   const [hover, setHover] = useState(false);
   return (
     <div
-      className="reveal"
+      className="reveal hud-frame"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
@@ -28,7 +28,7 @@ export default function KpiCard({
         padding: "18px 20px",
         borderRadius: theme.radius.md,
         background: theme.colors.surface,
-        border: `1px solid ${hover ? theme.colors.borderStrong : theme.colors.border}`,
+        border: `1px solid ${hover ? theme.colors.borderStrong : theme.colors.borderStrong}`,
         boxShadow: hover ? theme.shadow.glow : theme.shadow.card,
         transform: hover ? "translateY(-3px)" : "none",
         transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
@@ -52,10 +52,11 @@ export default function KpiCard({
       />
       <div
         style={{
+          fontFamily: theme.font.display,
           color: theme.colors.textMuted,
-          fontSize: 12.5,
-          fontWeight: 500,
-          letterSpacing: "0.04em",
+          fontSize: 11,
+          fontWeight: 600,
+          letterSpacing: "0.18em",
           textTransform: "uppercase",
         }}
       >

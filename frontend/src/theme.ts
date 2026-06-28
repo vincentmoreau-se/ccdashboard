@@ -1,48 +1,50 @@
 // Single source of truth for visual design tokens.
-// Mirrored as CSS custom properties in index.css; consumed directly here by
-// inline styles and by Recharts (which needs JS values for stroke/tick/contentStyle).
+// Re-themed to the "flight-deck HUD" / Capgemini palette to mirror the central
+// server dashboard. Keys are unchanged so existing inline-styled components and
+// Recharts props pick up the new look automatically; values now map to the
+// Tailwind tokens in tailwind.config.js + the CSS vars in index.css.
 
 export const theme = {
   colors: {
-    // Surfaces — warm deep slate, not pure black.
-    bg: "#16140f",
-    bgElevated: "#1c1a15",
-    surface: "#211e19",
-    surfaceHover: "#28241d",
-    border: "rgba(255, 255, 255, 0.07)",
-    borderStrong: "rgba(255, 255, 255, 0.12)",
-    // Text — warm cream.
-    text: "#ece6dc",
-    textMuted: "#a8a094",
-    textFaint: "#6f6a60",
+    // Surfaces — deep navy flight-deck.
+    bg: "#04070d", // void
+    bgElevated: "#0a1018", // panel
+    surface: "#0a1018", // panel
+    surfaceHover: "#0f1722", // panel-2
+    border: "#1c2a3a",
+    borderStrong: "#233246", // edge
+    // Text.
+    text: "#e6edf3", // bone
+    textMuted: "#8595a8", // ash
+    textFaint: "#5b6878", // haze
     // Brand accents.
-    accent: "#d97757", // Claude coral — primary
-    accentSoft: "rgba(217, 119, 87, 0.14)",
-    amber: "#e0a34e", // secondary — cost line / warnings
-    amberSoft: "rgba(224, 163, 78, 0.14)",
-    green: "#7bb369", // live / success
+    accent: "#12ABDB", // Capgemini Gamma Blue — primary
+    accentSoft: "rgba(18, 171, 219, 0.14)",
+    amber: "#0070AD", // Capgemini Honolulu Blue — secondary
+    amberSoft: "rgba(0, 112, 173, 0.16)",
+    green: "#9be34a", // live / success
   },
-  // Categorical palette for multi-series charts (donuts, stacked bars), warm-toned
-  // to stay on-brand with the coral identity. Ordered for good adjacent contrast.
+  // Categorical palette for multi-series charts — Capgemini extended vibrant blues.
   chart: [
-    "#d97757", // coral
-    "#e0a34e", // amber
-    "#7bb369", // green
-    "#c98a9b", // dusty rose
-    "#9a8cc4", // muted violet
-    "#6fa8b8", // teal
-    "#cbb994", // sand
-    "#b56b57", // brick
+    "#12ABDB", // brand
+    "#0070AD", // deep
+    "#00BFB3", // peacock
+    "#7B61FF", // violet
+    "#4FC3F7", // sky
+    "#1D4F91", // sapphire
+    "#9be34a", // live
+    "#ff5d62", // alert
   ],
   font: {
-    display: '"Fraunces", Georgia, serif',
-    body: '"Hanken Grotesk", system-ui, sans-serif',
-    mono: '"JetBrains Mono", ui-monospace, "SFMono-Regular", monospace',
+    display: '"Chakra Petch", sans-serif',
+    body: '"IBM Plex Mono", monospace',
+    mono: '"IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace',
   },
-  radius: { sm: 8, md: 12, lg: 16, pill: 999 },
+  // Sharp HUD corners.
+  radius: { sm: 2, md: 3, lg: 4, pill: 999 },
   space: (n: number) => n * 4,
   shadow: {
-    card: "0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5)",
-    glow: "0 0 0 1px rgba(217,119,87,0.18), 0 8px 28px -14px rgba(217,119,87,0.35)",
+    card: "inset 0 1px 0 0 rgba(255,255,255,0.03), 0 8px 30px -12px rgba(0,0,0,0.8)",
+    glow: "0 0 0 1px rgba(18,171,219,0.25), 0 0 24px -6px rgba(18,171,219,0.45)",
   },
 } as const;

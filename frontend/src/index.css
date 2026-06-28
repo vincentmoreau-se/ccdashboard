@@ -1,22 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ── Design tokens (mirror of src/theme.ts) ───────────────────────────── */
 :root {
-  --bg: #16140f;
-  --bg-elevated: #1c1a15;
-  --surface: #211e19;
-  --surface-hover: #28241d;
-  --border: rgba(255, 255, 255, 0.07);
-  --border-strong: rgba(255, 255, 255, 0.12);
-  --text: #ece6dc;
-  --text-muted: #a8a094;
-  --text-faint: #6f6a60;
-  --accent: #d97757;
-  --accent-soft: rgba(217, 119, 87, 0.14);
-  --amber: #e0a34e;
-  --green: #7bb369;
+  --bg: #04070d;
+  --bg-elevated: #0a1018;
+  --surface: #0a1018;
+  --surface-hover: #0f1722;
+  --border: #1c2a3a;
+  --border-strong: #233246;
+  --text: #e6edf3;
+  --text-muted: #8595a8;
+  --text-faint: #5b6878;
+  --accent: #12abdb;
+  --accent-soft: rgba(18, 171, 219, 0.14);
+  --amber: #0070ad;
+  --green: #9be34a;
 
-  --font-display: "Fraunces", Georgia, serif;
-  --font-body: "Hanken Grotesk", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+  --font-display: "Chakra Petch", sans-serif;
+  --font-body: "IBM Plex Mono", monospace;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
 
   color-scheme: dark;
 }
@@ -29,28 +33,98 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.55;
   color: var(--text);
   background-color: var(--bg);
-  /* Atmosphere: warm coral halo top, deepening to slate; fixed so it doesn't scroll. */
-  background-image:
-    radial-gradient(1100px 620px at 78% -8%, rgba(217, 119, 87, 0.10), transparent 60%),
-    radial-gradient(900px 600px at 8% 4%, rgba(224, 163, 78, 0.05), transparent 55%);
-  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Faint grain overlay for texture (very low opacity SVG noise). */
-body::before {
-  content: "";
+/* tabular figures everywhere so live values don't jitter as digits change */
+.tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+/* ── Flight-deck atmosphere: faint grid + radial vignette + scanlines ───── */
+.deck-bg {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: 0.025;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -10%, rgba(18, 171, 219, 0.08), transparent 60%),
+    radial-gradient(ellipse 100% 100% at 80% 110%, rgba(0, 112, 173, 0.07), transparent 55%),
+    linear-gradient(rgba(20, 32, 46, 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 32, 46, 0.5) 1px, transparent 1px),
+    #04070d;
+  background-size: 100% 100%, 100% 100%, 44px 44px, 44px 44px;
+}
+
+/* slow radar/scanline sweep traversing the deck — pure ambiance */
+.deck-sweep {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 32vh;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(18, 171, 219, 0.05) 45%,
+    rgba(18, 171, 219, 0.11) 50%,
+    rgba(18, 171, 219, 0.05) 55%,
+    transparent
+  );
+  animation: deck-sweep 7s linear infinite;
+}
+@keyframes deck-sweep {
+  0% { transform: translateY(-40vh); opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { transform: translateY(108vh); opacity: 0; }
+}
+
+.scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.18) 3px
+  );
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
+
+/* corner ticks for the HUD panel frame */
+.hud-frame {
+  position: relative;
+  border: 1px solid var(--tw-edge, #233246);
+}
+.hud-frame::before,
+.hud-frame::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-color: #12abdb;
+  pointer-events: none;
+}
+.hud-frame::before {
+  top: -1px;
+  left: -1px;
+  border-top: 1.5px solid;
+  border-left: 1.5px solid;
+}
+.hud-frame::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 1.5px solid;
+  border-right: 1.5px solid;
 }
 
 /* ── Typography ────────────────────────────────────────────────────────── */
@@ -58,16 +132,13 @@ h1, h2, h3 {
   font-family: var(--font-display);
   font-weight: 600;
   color: var(--text);
-  letter-spacing: -0.01em;
-  line-height: 1.15;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
 }
-h1 { font-size: 2rem; }
-h2 {
-  font-size: 1.4rem;
-  margin: 2rem 0 0.85rem;
-  font-optical-sizing: auto;
-}
-h3 { font-size: 1.12rem; margin: 1.6rem 0 0.6rem; }
+h1 { font-size: 1.4rem; }
+h2 { font-size: 1.05rem; margin: 1.8rem 0 0.85rem; }
+h3 { font-size: 0.95rem; margin: 1.4rem 0 0.6rem; letter-spacing: 0.16em; }
 
 p { color: var(--text-muted); }
 
@@ -76,7 +147,7 @@ a {
   text-decoration: none;
   transition: color 0.15s ease;
 }
-a:hover { color: #e8916f; text-decoration: underline; text-underline-offset: 3px; }
+a:hover { color: #4fc3f7; text-decoration: underline; text-underline-offset: 3px; }
 
 /* ── Data tables ───────────────────────────────────────────────────────── */
 .data-table {
@@ -87,10 +158,10 @@ a:hover { color: #e8916f; text-decoration: underline; text-underline-offset: 3px
 .data-table thead th {
   text-align: right;
   padding: 0.55rem 0.85rem;
-  font-family: var(--font-body);
-  font-size: 0.72rem;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--text-faint);
   border-bottom: 1px solid var(--border-strong);
@@ -102,17 +173,15 @@ a:hover { color: #e8916f; text-decoration: underline; text-underline-offset: 3px
   border-bottom: 1px solid var(--border);
   text-align: right;
   color: var(--text);
-  /* Numeric cells read better monospaced + tabular. */
   font-variant-numeric: tabular-nums;
   font-family: var(--font-mono);
   font-size: 0.86rem;
   white-space: nowrap;
 }
-/* First column is the label/name — body font, left aligned. */
 .data-table tbody td:first-child {
   text-align: left;
-  font-family: var(--font-body);
-  font-size: 0.92rem;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
   white-space: normal;
 }
 .data-table tbody tr { transition: background-color 0.12s ease; }
@@ -126,14 +195,14 @@ a:hover { color: #e8916f; text-decoration: underline; text-underline-offset: 3px
   height: 0.5em;
   border-radius: 50%;
   background: var(--green);
-  box-shadow: 0 0 0 0 rgba(123, 179, 105, 0.6);
+  box-shadow: 0 0 0 0 rgba(155, 227, 74, 0.6);
   animation: live-pulse 1.8s ease-out infinite;
   vertical-align: middle;
 }
 @keyframes live-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(123, 179, 105, 0.55); }
-  70%  { box-shadow: 0 0 0 7px rgba(123, 179, 105, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(123, 179, 105, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(155, 227, 74, 0.55); }
+  70%  { box-shadow: 0 0 0 7px rgba(155, 227, 74, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(155, 227, 74, 0); }
 }
 
 /* ── Staggered card reveal on load ─────────────────────────────────────── */
@@ -149,19 +218,28 @@ a:hover { color: #e8916f; text-decoration: underline; text-underline-offset: 3px
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .reveal, .live-dot { animation: none; }
+  .reveal, .live-dot, .deck-sweep { animation: none; }
+  .deck-sweep { display: none; }
+  .animate-flicker,
+  .animate-sweep,
+  .animate-glow-pulse,
+  .animate-pulse-dot,
+  .animate-boot-bar {
+    animation: none !important;
+  }
 }
 
 /* ── Custom scrollbar ──────────────────────────────────────────────────── */
 * { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
 *::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: #0a1018; }
 *::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
+  background: #233246;
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
-*::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); background-clip: padding-box; }
+*::-webkit-scrollbar-thumb:hover { background: #2f4459; background-clip: padding-box; }
 
 ::selection { background: var(--accent-soft); color: var(--text); }
 
