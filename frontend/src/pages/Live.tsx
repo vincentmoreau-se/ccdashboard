@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import type { SessionSummary } from "../api/client";
 import { subscribeLive } from "../api/sse";
-import { formatTokens } from "../lib/format";
+import { formatDuration, formatTokens } from "../lib/format";
 
 export default function Live() {
   const [active, setActive] = useState<SessionSummary[]>([]);
@@ -31,7 +31,7 @@ export default function Live() {
                 <strong>{s.ai_title ?? s.session_id}</strong> — {s.project}
                 <br />
                 {s.models[0] ?? "—"} · {formatTokens(s.usage.input + s.usage.output)} tok ·
-                dernier outil : {tool} · {s.message_count} messages
+                dernier outil : {tool} · {formatDuration(s.duration_seconds)} · {s.message_count} messages
               </li>
             );
           })}
