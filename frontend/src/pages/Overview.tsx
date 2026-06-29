@@ -11,7 +11,7 @@ import Panel from "../components/Panel";
 import { SkeletonCards } from "../components/Skeleton";
 import Sparkbar from "../components/Sparkbar";
 import UnknownCostBadge from "../components/UnknownCostBadge";
-import { formatCost, formatModel, formatProjectName, formatTokens } from "../lib/format";
+import { costBreakdownTitle, formatCost, formatModel, formatProjectName, formatTokens } from "../lib/format";
 import { theme } from "../theme";
 
 export default function Overview() {
@@ -98,7 +98,9 @@ export default function Overview() {
                 </td>
                 <td>{p.session_count}</td>
                 <td>{formatTokens(p.usage.input + p.usage.output)}</td>
-                <td>{formatCost(p.cost, currency, p.cost_known)}</td>
+                <td title={costBreakdownTitle(p.cost_breakdown, currency)} style={{ cursor: p.cost_known ? "help" : undefined }}>
+                  {formatCost(p.cost, currency, p.cost_known)}
+                </td>
                 <td><Sparkbar fraction={p.cost / maxProjectCost} color={theme.colors.accent} /></td>
               </tr>
             ))}

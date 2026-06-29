@@ -38,6 +38,25 @@ def test_cache_savings_unknown_model_is_zero():
     assert saved == 0.0
 
 
+def test_bedrock_decorated_model_id_matches_bare_price():
+    # Cross-region/versioned Bedrock ids must normalize to the bare pricing key.
+    table = PriceTable.load(PRICING)
+    u = Usage(input=1_000_000, output=1_000_000, cache_read=1_000_000)
+    cost, known = table.cost_for_usage(u, "us.anthropic.claude-opus-4-8-v1:0", "bedrock")
+    assert known is True
+    assert cost == 5.0 + 25.0 + 0.5
+
+
+def test_anthropic_dated_model_id_matches_bare_price():
+    # A dated Anthropic id (e.g. ...-20250514) normalizes to its bare pricing key.
+    table = PriceTable.load(PRICING)
+    cost, known = table.cost_for_usage(
+        Usage(input=1_000_000), "claude-sonnet-4-6-20250514", "anthropic"
+    )
+    assert known is True
+    assert cost == 3.0
+
+
 def test_detect_provider():
     assert detect_provider("us.anthropic.claude-opus-4-8-v1:0", "anthropic") == "bedrock"
     assert detect_provider("claude-opus-4-8", "anthropic") == "anthropic"

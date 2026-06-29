@@ -32,10 +32,55 @@ def test_summarize_sample():
     assert s.is_active is True
     assert s.cost_known is True
     assert s.cost > 0
+    # The per-component breakdown must sum back to the scalar cost.
+    assert abs(s.cost_breakdown.total() - s.cost) < 1e-12
+    assert s.cost_breakdown.cache_read > 0  # sample has cache_read on opus
     # sample.jsonl has cache_read=16285 on opus -> real savings; and content kinds.
     assert s.cache_savings > 0
     assert s.content_kind_counts.get("thinking", 0) >= 1
     assert s.content_kind_counts.get("tool_use", 0) >= 1
+
+
+def test_usage_deduplicated_per_message_id():
+    # Claude Code writes one assistant response across several lines that share the
+    # same message.id and repeat the identical message.usage (one line per content
+    # block). Usage/cost must be counted ONCE per message.id, but per-block signals
+    # (tools, lines) stay counted per line.
+    usage = {"input_tokens": 100, "output_tokens": 10}
+    lines = [
+        json.dumps({
+            "type": "assistant", "uuid": "u1", "sessionId": "sd",
+            "timestamp": "2026-06-11T17:00:00.000Z",
+            "message": {"id": "msg_1", "model": "claude-opus-4-8", "usage": usage,
+                        "content": [{"type": "text", "text": "hi"}]},
+        }),
+        json.dumps({
+            "type": "assistant", "uuid": "u2", "sessionId": "sd",
+            "timestamp": "2026-06-11T17:00:01.000Z",
+            "message": {"id": "msg_1", "model": "claude-opus-4-8", "usage": usage,
+                        "content": [{"type": "tool_use", "name": "Bash", "input": {}}]},
+        }),
+        json.dumps({
+            "type": "assistant", "uuid": "u3", "sessionId": "sd",
+            "timestamp": "2026-06-11T17:00:02.000Z",
+            "message": {"id": "msg_2", "model": "claude-opus-4-8",
+                        "usage": {"input_tokens": 50, "output_tokens": 5},
+                        "content": [{"type": "tool_use", "name": "Bash", "input": {}}]},
+        }),
+    ]
+    table = PriceTable.load(PRICING)
+    s = summarize_session(
+        parse_lines(lines), file_path=Path("inmemory.jsonl"), project="p",
+        table=table, default_provider="anthropic",
+        active_threshold_seconds=30, now_ts=1_000_000.0, mtime=1_000_000.0,
+    )
+    # msg_1 usage counted once (100+50 input, not 200+50); per-block tools still 2.
+    assert s.usage.input == 150
+    assert s.usage.output == 15
+    assert s.tool_counts == {"Bash": 2}
+    # Cost = deduped usage priced on opus (input 5.0/M, output 25.0/M).
+    expected = (150 * 5.0 + 15 * 25.0) / 1_000_000
+    assert abs(s.cost - expected) < 1e-12
 
 
 def test_lines_generated_accumulates_per_session():

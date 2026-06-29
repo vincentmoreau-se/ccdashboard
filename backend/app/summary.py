@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from app.models import SessionSummary, Usage
+from app.models import CostBreakdown, SessionSummary, Usage
 from app.parser import ParsedSession
 from app.pricing import PriceTable, detect_provider
 from app.taxonomy import classify_tool
@@ -38,6 +38,7 @@ def summarize_session(
     timestamps = []
     lines_generated = 0
     cost = 0.0
+    cost_breakdown = CostBreakdown()
     cache_savings = 0.0
     cost_known = True
     provider = default_provider
@@ -53,6 +54,7 @@ def summarize_session(
     mcp_server_counts: dict[str, int] = {}
     subagent_counts: dict[str, int] = {}
     slash_command_counts: dict[str, int] = {}
+    seen_message_ids: set[str] = set()
 
     for r in parsed.records:
         if r.timestamp:
@@ -88,11 +90,25 @@ def summarize_session(
                 provider_resolved = True
             if r.model not in models:
                 models.append(r.model)
-            total = total.add(r.usage)
-            c, known = table.cost_for_usage(r.usage, r.model, provider)
-            cost += c
-            cache_savings += table.cache_savings_for_usage(r.usage, r.model, provider)
-            cost_known = cost_known and known
+            # Claude Code écrit une même réponse d'assistant sur plusieurs lignes
+            # (une par bloc de contenu), toutes avec le même message.id et le même
+            # objet usage. On ne compte donc usage/coût qu'une fois par message.id
+            # (repli sur uuid, unique par ligne, si l'id manque). Les agrégats
+            # par-bloc (outils, lignes, kinds) ci-dessus restent comptés par ligne.
+            dedup_key = r.message_id or r.uuid
+            if dedup_key is None or dedup_key not in seen_message_ids:
+                if dedup_key is not None:
+                    seen_message_ids.add(dedup_key)
+                total = total.add(r.usage)
+                bd = table.cost_breakdown_for_usage(r.usage, r.model, provider)
+                if bd is None:
+                    cost_known = False
+                else:
+                    cost_breakdown = cost_breakdown.add(bd)
+                    cost += bd.total()
+                cache_savings += table.cache_savings_for_usage(
+                    r.usage, r.model, provider
+                )
 
     started = min(timestamps) if timestamps else None
     ended = max(timestamps) if timestamps else None
@@ -117,6 +133,7 @@ def summarize_session(
         lines_generated=lines_generated,
         cost=cost,
         cost_known=cost_known,
+        cost_breakdown=cost_breakdown,
         cache_savings=cache_savings,
         tool_counts=tool_counts,
         content_kind_counts=content_kind_counts,

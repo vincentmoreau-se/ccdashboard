@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 
 from app.config import Settings
-from app.models import MessageRecord, SessionSummary
+from app.models import CostBreakdown, MessageRecord, SessionSummary
 from app.parser import parse_session_file
 from app.pricing import PriceTable
 from app.summary import is_priceable_model, summarize_session
@@ -51,14 +51,42 @@ class SessionStore:
         Non-priceable turns (user messages, ``<synthetic>`` placeholders) have no
         billable model, so they are reported as a known cost of ``0.0`` rather than
         flagged unknown.
+
+        A single assistant response is written across several lines sharing one
+        ``message.id`` (and an identical ``usage``). The cost is attached only to the
+        first line of each ``message.id`` (``0.0`` on the others) so the timeline sum
+        matches the deduplicated session cost in :func:`summarize_session`.
         """
         out: list[MessageRecord] = []
+        seen_message_ids: set[str] = set()
         for r in records:
-            if is_priceable_model(r.model):
-                cost, known = self._table.cost_for_usage(r.usage, r.model, provider)
-            else:
+            breakdown = CostBreakdown()
+            if not is_priceable_model(r.model):
                 cost, known = 0.0, True
-            out.append(r.model_copy(update={"cost": cost, "cost_known": known}))
+            else:
+                dedup_key = r.message_id or r.uuid
+                if dedup_key is not None and dedup_key in seen_message_ids:
+                    cost, known = 0.0, True
+                else:
+                    if dedup_key is not None:
+                        seen_message_ids.add(dedup_key)
+                    bd = self._table.cost_breakdown_for_usage(
+                        r.usage, r.model, provider
+                    )
+                    if bd is None:
+                        cost, known = 0.0, False
+                    else:
+                        breakdown = bd
+                        cost, known = bd.total(), True
+            out.append(
+                r.model_copy(
+                    update={
+                        "cost": cost,
+                        "cost_known": known,
+                        "cost_breakdown": breakdown,
+                    }
+                )
+            )
         return out
 
     def all_summaries(self) -> list[SessionSummary]:
