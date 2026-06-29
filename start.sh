@@ -98,6 +98,29 @@ if [ "$EXPORT_ENABLED" = true ]; then
     exit 1
   fi
   echo "▶ Central export ENABLED → $CCDASH_EXPORT_ENDPOINT (token: ***hidden***, every ${CCDASH_EXPORT_INTERVAL_SECONDS}s)"
+  # Resolve and show the exact source.user_id that will be sent, reusing the
+  # backend's identity logic (stdlib-only, no pydantic) so the two never drift.
+  if command -v python3 >/dev/null 2>&1; then
+    EXPORT_USER_ID="$(python3 - <<'PY' 2>/dev/null || true
+import os, sys
+from pathlib import Path
+from types import SimpleNamespace
+sys.path.insert(0, "backend")
+from app.identity import resolve_user_id
+s = SimpleNamespace(
+    export_user_id=os.environ.get("CCDASH_EXPORT_USER_ID") or None,
+    claude_settings_path=Path.home() / ".claude" / "settings.json",
+    export_anon_id_path=Path.home() / ".claude" / ".ccdashboard_user_id",
+)
+print(resolve_user_id(s))
+PY
+)"
+  fi
+  if [ -n "${EXPORT_USER_ID:-}" ]; then
+    echo "▶ Exporting as user_id: $EXPORT_USER_ID"
+  else
+    echo "⚠ Could not pre-resolve user_id (backend will derive it at runtime)."
+  fi
 else
   echo "▶ Central export disabled (local only) — use --export to push to the server."
 fi
