@@ -4,7 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { getConfig, getProject } from "../api/client";
 import KpiCard from "../components/KpiCard";
 import { SkeletonCards } from "../components/Skeleton";
-import { formatCost, formatDuration, formatModel, formatProjectName, formatTokens } from "../lib/format";
+import { costBreakdownTitle, formatCost, formatDuration, formatModel, formatProjectName, formatTokens } from "../lib/format";
 
 export default function ProjectDetail() {
   const { name = "" } = useParams();
@@ -47,7 +47,9 @@ export default function ProjectDetail() {
               <td>{formatModel(s.models[0] ?? "—")}</td>
               <td>{formatDuration(s.duration_seconds)}</td>
               <td>{formatTokens(s.usage.input + s.usage.output)}</td>
-              <td>{formatCost(s.cost, currency, s.cost_known)}</td>
+              <td title={costBreakdownTitle(s.cost_breakdown, currency)} style={{ cursor: s.cost_known ? "help" : undefined }}>
+                {formatCost(s.cost, currency, s.cost_known)}
+              </td>
             </tr>
           ))}
         </tbody>

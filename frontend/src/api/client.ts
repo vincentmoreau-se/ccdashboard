@@ -5,13 +5,16 @@ export interface Usage {
   cache_write_5m: number; cache_write_1h: number; cache_read: number;
   web_search: number; web_fetch: number;
 }
+export interface CostBreakdown {
+  input: number; output: number; cache_write: number; cache_read: number;
+}
 export interface SessionSummary {
   session_id: string; project: string; cwd: string | null; file_path: string;
   ai_title: string | null; started_at: string | null; ended_at: string | null;
   duration_seconds: number | null; is_active: boolean; models: string[];
   provider: string; git_branch: string | null; cc_version: string | null;
   message_count: number; usage: Usage; lines_generated: number;
-  cost: number; cost_known: boolean;
+  cost: number; cost_known: boolean; cost_breakdown: CostBreakdown;
   cache_savings: number;
   tool_counts: Record<string, number>; content_kind_counts: Record<string, number>;
   skipped_lines: number;
@@ -27,13 +30,14 @@ export interface SessionSummary {
 export interface ProjectSummary {
   name: string; path: string; session_count: number; usage: Usage;
   lines_generated: number;
-  cost: number; cost_known: boolean; last_activity: string | null; models: string[];
+  cost: number; cost_known: boolean; cost_breakdown: CostBreakdown;
+  last_activity: string | null; models: string[];
   language_counts: Record<string, number>;
   framework_counts: Record<string, number>;
 }
 export interface ModelStat {
   model: string; provider: string; usage: Usage; cost: number;
-  cost_known: boolean; session_count: number;
+  cost_known: boolean; cost_breakdown: CostBreakdown; session_count: number;
 }
 export interface TimeBucket {
   date: string; session_count: number; usage: Usage; cost: number;
@@ -58,7 +62,7 @@ export interface MessageRecord {
   type: string; model: string | null; git_branch: string | null;
   cwd: string | null; cc_version: string | null; usage: Usage;
   tools: string[]; content_kinds: string[]; lines_generated: number;
-  cost: number; cost_known: boolean;
+  cost: number; cost_known: boolean; cost_breakdown: CostBreakdown;
   languages: string[];
   frameworks: string[];
   skills: string[];

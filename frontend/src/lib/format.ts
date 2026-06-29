@@ -1,3 +1,5 @@
+import type { CostBreakdown } from "../api/client";
+
 export function formatTokens(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
@@ -7,6 +9,23 @@ export function formatTokens(n: number): string {
 export function formatCost(n: number, currency: string, known: boolean): string {
   if (!known) return "n/a";
   return `${n.toFixed(2)} ${currency}`;
+}
+
+// Multi-line hover text (native title=) detailing what drives a cost. Cache tokens
+// are excluded from the displayed token count but dominate the cost, so this makes
+// an otherwise-surprising figure legible. Returns "" when the breakdown is absent.
+export function costBreakdownTitle(
+  bd: CostBreakdown | undefined,
+  currency: string,
+): string {
+  if (!bd) return "";
+  const line = (label: string, v: number) => `${label}: ${v.toFixed(2)} ${currency}`;
+  return [
+    line("Input", bd.input),
+    line("Output", bd.output),
+    line("Écriture cache", bd.cache_write),
+    line("Lecture cache", bd.cache_read),
+  ].join("\n");
 }
 
 export function formatDuration(seconds: number | null): string {

@@ -5,7 +5,7 @@ import { getConfig, getProjects } from "../api/client";
 import { SkeletonCards } from "../components/Skeleton";
 import Sparkbar from "../components/Sparkbar";
 import UnknownCostBadge from "../components/UnknownCostBadge";
-import { formatCost, formatProjectName, formatTokens } from "../lib/format";
+import { costBreakdownTitle, formatCost, formatProjectName, formatTokens } from "../lib/format";
 import { theme } from "../theme";
 
 export default function Projects() {
@@ -33,7 +33,9 @@ export default function Projects() {
               </td>
               <td>{p.session_count}</td>
               <td>{formatTokens(p.usage.input + p.usage.output)}</td>
-              <td>{formatCost(p.cost, currency, p.cost_known)}</td>
+              <td title={costBreakdownTitle(p.cost_breakdown, currency)} style={{ cursor: p.cost_known ? "help" : undefined }}>
+                {formatCost(p.cost, currency, p.cost_known)}
+              </td>
               <td><Sparkbar fraction={p.cost / maxCost} color={theme.colors.accent} /></td>
               <td>{p.last_activity?.slice(0, 10) ?? "—"}</td>
             </tr>

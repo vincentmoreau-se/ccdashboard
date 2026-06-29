@@ -149,6 +149,7 @@ def _record_from(obj: dict) -> MessageRecord:
     return MessageRecord(
         uuid=obj.get("uuid"),
         parent_uuid=obj.get("parentUuid"),
+        message_id=message.get("id"),
         timestamp=_parse_ts(obj.get("timestamp")),
         type=obj.get("type", "unknown"),
         model=message.get("model"),

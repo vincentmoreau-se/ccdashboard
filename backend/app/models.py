@@ -26,9 +26,33 @@ class Usage(BaseModel):
         )
 
 
+class CostBreakdown(BaseModel):
+    """Per-component cost in display currency. Buckets sum to the scalar cost.
+
+    The two cache-write tiers (5m/1h) are collapsed into ``cache_write``.
+    """
+
+    input: float = 0.0
+    output: float = 0.0
+    cache_write: float = 0.0
+    cache_read: float = 0.0
+
+    def add(self, other: "CostBreakdown") -> "CostBreakdown":
+        return CostBreakdown(
+            input=self.input + other.input,
+            output=self.output + other.output,
+            cache_write=self.cache_write + other.cache_write,
+            cache_read=self.cache_read + other.cache_read,
+        )
+
+    def total(self) -> float:
+        return self.input + self.output + self.cache_write + self.cache_read
+
+
 class MessageRecord(BaseModel):
     uuid: str | None = None
     parent_uuid: str | None = None
+    message_id: str | None = None
     timestamp: datetime | None = None
     type: str
     model: str | None = None
@@ -41,6 +65,7 @@ class MessageRecord(BaseModel):
     lines_generated: int = 0
     cost: float = 0.0
     cost_known: bool = True
+    cost_breakdown: CostBreakdown = Field(default_factory=CostBreakdown)
     languages: list[str] = Field(default_factory=list)
     frameworks: list[str] = Field(default_factory=list)
     skills: list[str] = Field(default_factory=list)
@@ -68,6 +93,7 @@ class SessionSummary(BaseModel):
     lines_generated: int = 0
     cost: float = 0.0
     cost_known: bool = True
+    cost_breakdown: CostBreakdown = Field(default_factory=CostBreakdown)
     cache_savings: float = 0.0
     tool_counts: dict[str, int] = Field(default_factory=dict)
     content_kind_counts: dict[str, int] = Field(default_factory=dict)
@@ -90,6 +116,7 @@ class ProjectSummary(BaseModel):
     lines_generated: int = 0
     cost: float = 0.0
     cost_known: bool = True
+    cost_breakdown: CostBreakdown = Field(default_factory=CostBreakdown)
     last_activity: datetime | None = None
     models: list[str] = Field(default_factory=list)
     language_counts: dict[str, int] = Field(default_factory=dict)
@@ -102,6 +129,7 @@ class ModelStat(BaseModel):
     usage: Usage = Field(default_factory=Usage)
     cost: float = 0.0
     cost_known: bool = True
+    cost_breakdown: CostBreakdown = Field(default_factory=CostBreakdown)
     session_count: int = 0
 
 

@@ -7,7 +7,7 @@ import BarList from "../components/BarList";
 import Donut from "../components/Donut";
 import Panel from "../components/Panel";
 import { SkeletonCards } from "../components/Skeleton";
-import { formatCost, formatCount, formatProjectName, formatTokens } from "../lib/format";
+import { costBreakdownTitle, formatCost, formatCount, formatProjectName, formatTokens } from "../lib/format";
 import { theme } from "../theme";
 
 const KIND_LABELS: Record<string, string> = {
@@ -100,7 +100,9 @@ export default function Insights() {
                 </td>
                 <td style={{ color: theme.colors.textMuted, textAlign: "left", fontFamily: theme.font.body }} title={s.project}>{formatProjectName(s.project)}</td>
                 <td>{formatTokens(s.usage.input + s.usage.output)}</td>
-                <td>{formatCost(s.cost, currency, s.cost_known)}</td>
+                <td title={costBreakdownTitle(s.cost_breakdown, currency)} style={{ cursor: s.cost_known ? "help" : undefined }}>
+                  {formatCost(s.cost, currency, s.cost_known)}
+                </td>
               </tr>
             ))}
           </tbody>

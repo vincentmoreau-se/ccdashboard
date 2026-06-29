@@ -36,6 +36,7 @@ def list_projects(summaries: list[SessionSummary]) -> list[ProjectSummary]:
         p.usage = p.usage.add(s.usage)
         p.lines_generated += s.lines_generated
         p.cost += s.cost
+        p.cost_breakdown = p.cost_breakdown.add(s.cost_breakdown)
         p.cost_known = p.cost_known and s.cost_known
         p.models = _merge_models(p.models, s.models)
         _merge_counts(p.language_counts, s.language_counts)
@@ -94,6 +95,7 @@ def build_overview(summaries: list[SessionSummary]) -> Overview:
             model_acc[model_key] = ms
         ms.usage = ms.usage.add(s.usage)
         ms.cost += s.cost
+        ms.cost_breakdown = ms.cost_breakdown.add(s.cost_breakdown)
         ms.cost_known = ms.cost_known and s.cost_known
         ms.session_count += 1
 

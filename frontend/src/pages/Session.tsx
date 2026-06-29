@@ -6,7 +6,7 @@ import BarList from "../components/BarList";
 import Donut from "../components/Donut";
 import Panel from "../components/Panel";
 import {
-  formatCost, formatCount, formatDuration, formatModel, formatProjectName, formatTokens, mapToBarItems,
+  costBreakdownTitle, formatCost, formatCount, formatDuration, formatModel, formatProjectName, formatTokens, mapToBarItems,
 } from "../lib/format";
 import { theme } from "../theme";
 
@@ -37,13 +37,13 @@ export default function Session() {
   if (isLoading) return <p>Chargement…</p>;
   if (error || !data) return <p>Session introuvable.</p>;
   const s = data.summary;
-  const meta: [string, string][] = [
+  const meta: [string, string, string?][] = [
     ["Projet", formatProjectName(s.project)],
     ["Modèle(s)", `${s.models.map(formatModel).join(", ") || "—"} (${s.provider})`],
     ["Branche", `${s.git_branch ?? "—"} · CC ${s.cc_version ?? "—"}`],
     ["Durée", `${formatDuration(s.duration_seconds)} · ${s.message_count} messages`],
     ["Tokens", formatTokens(s.usage.input + s.usage.output)],
-    ["Coût", formatCost(s.cost, currency, s.cost_known)],
+    ["Coût", formatCost(s.cost, currency, s.cost_known), costBreakdownTitle(s.cost_breakdown, currency)],
     ["Cache économisé", formatCost(s.cache_savings, currency, true)],
   ];
   return (
@@ -62,10 +62,10 @@ export default function Session() {
           overflow: "hidden",
         }}
       >
-        {meta.map(([k, v]) => (
+        {meta.map(([k, v, t]) => (
           <div key={k} style={{ background: theme.colors.surface, padding: "12px 16px" }}>
             <div style={{ color: theme.colors.textFaint, fontSize: 11, letterSpacing: "0.05em", textTransform: "uppercase" }}>{k}</div>
-            <div style={{ marginTop: 3, fontFamily: theme.font.mono, fontSize: 13.5, color: theme.colors.text }}>{v}</div>
+            <div title={t} style={{ marginTop: 3, fontFamily: theme.font.mono, fontSize: 13.5, color: theme.colors.text, cursor: t ? "help" : undefined }}>{v}</div>
           </div>
         ))}
       </div>
@@ -269,7 +269,7 @@ export default function Session() {
                   </span>
                 )}
                 {m.cost > 0 && (
-                  <span style={{ fontFamily: theme.font.mono, fontSize: 12, color: theme.colors.amber }}>
+                  <span title={costBreakdownTitle(m.cost_breakdown, currency)} style={{ fontFamily: theme.font.mono, fontSize: 12, color: theme.colors.amber, cursor: "help" }}>
                     {formatCost(m.cost, currency, m.cost_known)}
                   </span>
                 )}
